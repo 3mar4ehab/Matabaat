@@ -26,7 +26,7 @@ class MainActivity : Activity() {
             setPadding(28, 36, 28, 28)
             setBackgroundColor(0xFFF4F7FA.toInt())
         }
-        val title = TextView(this).apply { text = "RoadAlert Egypt"; textSize = 28f; setTextColor(0xFF102A43.toInt()) }
+        val title = TextView(this).apply { text = "Matabaat"; textSize = 28f; setTextColor(0xFF102A43.toInt()) }
         val subtitle = TextView(this).apply {
             text = "تنبيهات الرادارات والمطبات أثناء استخدام Google Maps"
             textSize = 16f; setPadding(0, 12, 0, 24); setTextColor(0xFF334E68.toInt())
@@ -61,7 +61,7 @@ class MainActivity : Activity() {
     private fun enableOverlay() {
         if (!Settings.canDrawOverlays(this)) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-            Toast.makeText(this, "اسمح لـ RoadAlert بالظهور فوق التطبيقات ثم ارجع للتطبيق", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "اسمح لـ Matabaat بالظهور فوق التطبيقات ثم ارجع للتطبيق", Toast.LENGTH_LONG).show()
         } else Toast.makeText(this, "تم السماح بالنافذة العائمة", Toast.LENGTH_SHORT).show()
     }
 
