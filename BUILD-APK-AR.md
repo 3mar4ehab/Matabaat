@@ -1,11 +1,11 @@
 # بناء APK سحابياً من الهاتف أو الكمبيوتر
 
-أضف مجلد المشروع إلى مستودع GitHub باسم RoadAlertEgypt، ثم:
+أضف مجلد المشروع إلى مستودع GitHub باسم MatabaatEgypt، ثم:
 
 1. افتح تبويب Actions في المستودع.
-2. اختر Build RoadAlert Egypt APK.
+2. اختر Build Matabaat APK.
 3. اضغط Run workflow وانتظر انتهاء المهمة بنجاح.
-4. افتح نتيجة التشغيل، ومن قسم Artifacts نزّل RoadAlert-Egypt-debug-apk.
+4. افتح نتيجة التشغيل، ومن قسم Artifacts نزّل Matabaat-Egypt-debug-apk.
 5. فك ضغط الملف وستجد app-debug.apk.
 
 هذا Debug APK للتجربة فقط، غير موقّع للنشر على Google Play. قد يطلب Android السماح بتثبيت التطبيقات من مصدر المتصفح/مدير الملفات.
