@@ -3,12 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
 }
-
 val signingStore = System.getenv("MATABAAT_KEYSTORE_PATH")
 val signingStorePassword = System.getenv("MATABAAT_KEYSTORE_PASSWORD")
 val signingAlias = System.getenv("MATABAAT_KEY_ALIAS")
 val signingKeyPassword = System.getenv("MATABAAT_KEY_PASSWORD")
-
 android {
     namespace = "com.roadalert.egypt"
     compileSdk = 35
@@ -16,17 +14,13 @@ android {
         applicationId = "com.roadalert.egypt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.08"
+        versionCode = 9
+        versionName = "0.09"
     }
     signingConfigs {
-        if (!signingStore.isNullOrBlank()) {
-            create("stableRelease") {
-                storeFile = file(signingStore)
-                storePassword = signingStorePassword
-                keyAlias = signingAlias
-                keyPassword = signingKeyPassword
-            }
+        if (!signingStore.isNullOrBlank()) create("stableRelease") {
+            storeFile = file(signingStore); storePassword = signingStorePassword
+            keyAlias = signingAlias; keyPassword = signingKeyPassword
         }
     }
     buildTypes {
@@ -41,9 +35,9 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 }
-
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
 }
