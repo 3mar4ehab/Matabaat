@@ -19,12 +19,13 @@ class MainActivity : Activity() {
     private lateinit var store: HazardStore
     private lateinit var status: TextView
     private lateinit var cloudSync: HazardCloudSync
+    private var cloudReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = HazardStore(this)
         cloudSync = HazardCloudSync(this)
-        cloudSync.start { runOnUiThread { refreshStatus() } }
+        cloudSync.start { ready -> runOnUiThread { cloudReady = ready; refreshStatus() } }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(28, 36, 28, 28)
@@ -119,6 +120,6 @@ class MainActivity : Activity() {
         status.text = getString(R.string.status_local,
             all.count { it.type == HazardType.SPEED_CAMERA },
             all.count { it.type == HazardType.SPEED_BUMP },
-            all.count { it.type == HazardType.POTHOLE }) + "\n" + getString(R.string.sync_pending)
+            all.count { it.type == HazardType.POTHOLE }) + "\n" + getString(if (cloudReady) R.string.sync_ready else R.string.sync_pending)
     }
 }
