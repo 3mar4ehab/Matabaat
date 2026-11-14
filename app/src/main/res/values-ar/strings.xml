@@ -40,5 +40,8 @@
     <string name="notification_channel">تنبيهات مطبات للطريق</string>
     <string name="osm_attribution">بيانات الطريق: © مساهمو OpenStreetMap (ODbL)</string>
     <string name="osm_import_done">تم استيراد %1$d نقطة طريق من OpenStreetMap</string>
-    <string name="osm_import_failed">تعذر تنزيل بيانات OpenStreetMap. حاول مرة أخرى لاحقًا.</string>
+    <string name="osm_import_failed">تعذر تنزيل بيانات بعض المناطق. اضغط تحديث بيانات الطريق لإعادة المحاولة.</string>
+    <string name="refresh_road_data">تحديث بيانات الطريق</string>
+    <string name="osm_import_started">جاري تنزيل بيانات الطريق على أجزاء...</string>
+    <string name="osm_import_finished">انتهى تنزيل بيانات الطريق</string>
 </resources>
