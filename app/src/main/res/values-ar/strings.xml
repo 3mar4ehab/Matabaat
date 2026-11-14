@@ -10,6 +10,8 @@
     <string name="report_pothole">إبلاغ عن حفرة هنا</string>
     <string name="open_maps">فتح خرائط Google</string>
     <string name="quick_report_title">إيه الخطر اللي قابلته؟</string>
+    <string name="quick_report_short">بلاغ سريع</string>
+    <string name="service_start_failed">تعذر تشغيل التنبيهات: %1$s</string>
     <string name="camera">🚨 رادار</string>
     <string name="bump">🟡 مطب</string>
     <string name="pothole">🕳️ حفرة</string>
