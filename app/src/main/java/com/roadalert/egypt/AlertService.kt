@@ -29,9 +29,9 @@ class AlertService : Service(), LocationListener {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        startForeground(44, notification("جاري متابعة الطريق"))
+        startForeground(44, notification(getString(R.string.service_tracking)))
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        showBubble("RoadAlert\nجاري تحديد الموقع...")
+        showBubble(getString(R.string.service_locating))
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         try {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1500L, 5f, this)
@@ -41,15 +41,15 @@ class AlertService : Service(), LocationListener {
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("road_alert", "RoadAlert navigation alerts", NotificationManager.IMPORTANCE_LOW)
+            val channel = NotificationChannel("matabaat_alerts", getString(R.string.notification_channel), NotificationManager.IMPORTANCE_LOW)
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
     private fun notification(text: String): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        return Notification.Builder(this, "road_alert")
-            .setContentTitle("RoadAlert Egypt").setContentText(text)
+        return Notification.Builder(this, "matabaat_alerts")
+            .setContentTitle(getString(R.string.app_name)).setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_map).setContentIntent(open).build()
     }
 
@@ -70,25 +70,25 @@ class AlertService : Service(), LocationListener {
 
     override fun onLocationChanged(location: Location) {
         val nearest = Geo.nearest(location.latitude, location.longitude, store.all())
-        if (nearest == null) { showBubble("RoadAlert\nلا توجد بلاغات قريبة"); return }
+        if (nearest == null) { showBubble(getString(R.string.no_nearby)); return }
         val (hazard, distance) = nearest
         val label = when (hazard.type) {
-            HazardType.SPEED_CAMERA -> "رادار مُبلّغ عنه"
-            HazardType.SPEED_BUMP -> "مطب مُبلّغ عنه"
-            HazardType.POTHOLE -> "حفرة مُبلّغ عنها"
+            HazardType.SPEED_CAMERA -> getString(R.string.camera_reported)
+            HazardType.SPEED_BUMP -> getString(R.string.bump_reported)
+            HazardType.POTHOLE -> getString(R.string.pothole_reported)
         }
         val meters = distance.toInt()
-        showBubble("⚠ $label\nبعد ${meters} متر")
+        showBubble("⚠ " + getString(R.string.alert_distance, label, meters))
         val key = "${hazard.type}:${hazard.latitude}:${hazard.longitude}"
         if (distance <= 350f && (key != lastAlertKey || System.currentTimeMillis() - lastAlertAt > 45000L)) {
             lastAlertKey = key; lastAlertAt = System.currentTimeMillis()
             runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85).startTone(ToneGenerator.TONE_PROP_BEEP, 500) }
-            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(44, notification("$label على بعد ${meters} متر"))
+            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(44, notification(getString(R.string.alert_distance, label, meters)))
         }
     }
 
     override fun onProviderEnabled(provider: String) {}
-    override fun onProviderDisabled(provider: String) { showBubble("RoadAlert\nفعّل GPS للحصول على التنبيهات") }
+    override fun onProviderDisabled(provider: String) { showBubble(getString(R.string.enable_gps)) }
     @Deprecated("Deprecated in Android API") override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
 
     override fun onDestroy() {
