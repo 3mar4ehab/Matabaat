@@ -10,7 +10,7 @@ class HazardStore(context: Context) {
 
     fun all(): List<Hazard> {
         val raw = prefs.getString("hazards", "[]") ?: "[]"
-        val array = JSONArray(raw)
+        val array = runCatching { JSONArray(raw) }.getOrElse { return emptyList() }
         return (0 until array.length()).mapNotNull { i ->
             runCatching {
                 val o = array.getJSONObject(i)
