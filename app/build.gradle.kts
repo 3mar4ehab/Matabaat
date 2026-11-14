@@ -4,6 +4,11 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val signingStore = System.getenv("MATABAAT_KEYSTORE_PATH")
+val signingStorePassword = System.getenv("MATABAAT_KEYSTORE_PASSWORD")
+val signingAlias = System.getenv("MATABAAT_KEY_ALIAS")
+val signingKeyPassword = System.getenv("MATABAAT_KEY_PASSWORD")
+
 android {
     namespace = "com.roadalert.egypt"
     compileSdk = 35
@@ -11,8 +16,24 @@ android {
         applicationId = "com.roadalert.egypt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.06"
+        versionCode = 7
+        versionName = "0.07"
+    }
+    signingConfigs {
+        if (!signingStore.isNullOrBlank()) {
+            create("stableRelease") {
+                storeFile = file(signingStore)
+                storePassword = signingStorePassword
+                keyAlias = signingAlias
+                keyPassword = signingKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            if (!signingStore.isNullOrBlank()) signingConfig = signingConfigs.getByName("stableRelease")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
