@@ -63,11 +63,11 @@ class HazardMapActivity : Activity(), MapEventsReceiver {
             hazards.forEach { h ->
                 val marker = Marker(map).apply {
                     position = GeoPoint(h.latitude, h.longitude)
-                    title = when (h.type) {
+                    setTitle(when (h.type) {
                         HazardType.SPEED_CAMERA -> "رادار"
                         HazardType.SPEED_BUMP -> "مطب"
                         HazardType.POTHOLE -> "حفرة"
-                    }
+                    })
                     snippet = "الموقع: %.5f, %.5f".format(h.latitude, h.longitude)
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 }
