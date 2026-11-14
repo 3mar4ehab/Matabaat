@@ -10,6 +10,8 @@
     <string name="report_pothole">Report pothole here</string>
     <string name="open_maps">Open Google Maps</string>
     <string name="quick_report_title">What hazard did you see?</string>
+    <string name="quick_report_short">Quick report</string>
+    <string name="service_start_failed">Could not start alerts: %1$s</string>
     <string name="camera">🚨 Speed camera</string>
     <string name="bump">🟡 Speed bump</string>
     <string name="pothole">🕳️ Pothole</string>
