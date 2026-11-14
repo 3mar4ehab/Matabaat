@@ -49,8 +49,22 @@ class HazardCloudSync(context: Context) {
                 }
             }
         }
-        if (externalListener == null) {
-            externalListener = db.collection("external_hazards").addSnapshotListener { snapshot, error ->
+    }
+
+    /** Subscribe only to external road hazards inside the device's current map tile. */
+    fun listenExternalForLocation(latitude: Double, longitude: Double) {
+        val tileSize = 0.25
+        val south = kotlin.math.floor(latitude / tileSize) * tileSize
+        val west = kotlin.math.floor(longitude / tileSize) * tileSize
+        val north = south + tileSize
+        val east = west + tileSize
+        externalListener?.remove()
+        externalListener = db.collection("external_hazards")
+            .whereGreaterThanOrEqualTo("latitude", south)
+            .whereLessThan("latitude", north)
+            .whereGreaterThanOrEqualTo("longitude", west)
+            .whereLessThan("longitude", east)
+            .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("MatabaatCloud", "External hazard listener failed", error)
                     return@addSnapshotListener
