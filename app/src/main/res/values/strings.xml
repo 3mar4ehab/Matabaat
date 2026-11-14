@@ -37,5 +37,8 @@
     <string name="notification_channel">Matabaat road alerts</string>
     <string name="osm_attribution">Map and road data: © OpenStreetMap contributors (ODbL)</string>
     <string name="osm_import_done">Imported %1$d road points from OpenStreetMap</string>
-    <string name="osm_import_failed">Could not download OpenStreetMap data. Try again later.</string>
+    <string name="osm_import_failed">Some road data areas could not be downloaded. Tap Refresh road data to retry.</string>
+    <string name="refresh_road_data">Refresh road data</string>
+    <string name="osm_import_started">Downloading road data in sections…</string>
+    <string name="osm_import_finished">Road data download finished</string>
 </resources>
