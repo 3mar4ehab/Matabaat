@@ -82,7 +82,6 @@ class HazardCloudSync(context: Context) {
                 }
             }
         }
-    }
 
     /** Uploads only OSM points; user-created reports never enter this collection. */
     fun publishOpenStreetMap(onComplete: ((Boolean, Int) -> Unit)? = null) {
