@@ -63,7 +63,7 @@ class MainActivity : Activity() {
             setBackgroundColor(navy)
         }
         val logo = ImageView(this).apply {
-            setImageResource(R.drawable.matabaat_logo)
+            setImageResource(R.drawable.ic_matabaat)
             scaleType = ImageView.ScaleType.FIT_CENTER
             layoutParams = LinearLayout.LayoutParams(dp(170), dp(160))
         }
