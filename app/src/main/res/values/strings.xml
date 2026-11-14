@@ -35,4 +35,7 @@
     <string name="pothole_reported">Reported pothole</string>
     <string name="alert_distance">%1$s, %2$d meters away</string>
     <string name="notification_channel">Matabaat road alerts</string>
+    <string name="osm_attribution">Map and road data: © OpenStreetMap contributors (ODbL)</string>
+    <string name="osm_import_done">Imported %1$d road points from OpenStreetMap</string>
+    <string name="osm_import_failed">Could not download OpenStreetMap data. Try again later.</string>
 </resources>
