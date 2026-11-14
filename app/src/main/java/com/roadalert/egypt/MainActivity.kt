@@ -27,21 +27,21 @@ class MainActivity : Activity() {
             setPadding(28, 36, 28, 28)
             setBackgroundColor(0xFFF4F7FA.toInt())
         }
-        val title = TextView(this).apply { text = "Matabaat"; textSize = 28f; setTextColor(0xFF102A43.toInt()) }
+        val title = TextView(this).apply { text = getString(R.string.app_name); textSize = 28f; setTextColor(0xFF102A43.toInt()) }
         val subtitle = TextView(this).apply {
-            text = "تنبيهات الرادارات والمطبات أثناء استخدام Google Maps"
+            text = getString(R.string.subtitle)
             textSize = 16f; setPadding(0, 12, 0, 24); setTextColor(0xFF334E68.toInt())
         }
         status = TextView(this).apply { textSize = 14f; setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt()) }
         root.addView(title); root.addView(subtitle); root.addView(status)
-        root.addView(actionButton("تفعيل النافذة العائمة") { enableOverlay() })
-        root.addView(actionButton("تشغيل التنبيهات") { startAlerts() })
-        root.addView(actionButton("إيقاف التنبيهات") { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, "تم إيقاف التنبيهات", Toast.LENGTH_SHORT).show() })
-        root.addView(actionButton("＋ إبلاغ سريع عن خطر بالطريق") { showQuickReport() })
-        root.addView(actionButton("إبلاغ عن رادار هنا") { report(HazardType.SPEED_CAMERA) })
-        root.addView(actionButton("إبلاغ عن مطب هنا") { report(HazardType.SPEED_BUMP) })
-        root.addView(actionButton("إبلاغ عن حفرة هنا") { report(HazardType.POTHOLE) })
-        root.addView(actionButton("فتح Google Maps") {
+        root.addView(actionButton(R.string.overlay) { enableOverlay() })
+        root.addView(actionButton(R.string.start_alerts) { startAlerts() })
+        root.addView(actionButton(R.string.stop_alerts) { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, R.string.alerts_stopped, Toast.LENGTH_SHORT).show() })
+        root.addView(actionButton(R.string.quick_report) { showQuickReport() })
+        root.addView(actionButton(R.string.report_camera) { report(HazardType.SPEED_CAMERA) })
+        root.addView(actionButton(R.string.report_bump) { report(HazardType.SPEED_BUMP) })
+        root.addView(actionButton(R.string.report_pothole) { report(HazardType.POTHOLE) })
+        root.addView(actionButton(R.string.open_maps) {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com")))
         })
         setContentView(root)
@@ -49,18 +49,18 @@ class MainActivity : Activity() {
         requestLocationPermission()
     }
 
-    private fun actionButton(label: String, action: () -> Unit) = Button(this).apply {
-        text = label; isAllCaps = false; textSize = 15f; gravity = Gravity.CENTER
+    private fun actionButton(label: Int, action: () -> Unit) = Button(this).apply {
+        text = getString(label); isAllCaps = false; textSize = 15f; gravity = Gravity.CENTER
         setOnClickListener { action() }
     }
 
     private fun showQuickReport() {
-        val labels = arrayOf("🚨 رادار", "🟡 مطب", "🕳️ حفرة")
+        val labels = arrayOf(getString(R.string.camera), getString(R.string.bump), getString(R.string.pothole))
         val types = arrayOf(HazardType.SPEED_CAMERA, HazardType.SPEED_BUMP, HazardType.POTHOLE)
         AlertDialog.Builder(this)
-            .setTitle("إيه الخطر اللي قابلته؟")
+            .setTitle(R.string.quick_report_title)
             .setItems(labels) { _, which -> report(types[which]) }
-            .setNegativeButton("إلغاء", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -73,8 +73,8 @@ class MainActivity : Activity() {
     private fun enableOverlay() {
         if (!Settings.canDrawOverlays(this)) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-            Toast.makeText(this, "اسمح لـ Matabaat بالظهور فوق التطبيقات ثم ارجع للتطبيق", Toast.LENGTH_LONG).show()
-        } else Toast.makeText(this, "تم السماح بالنافذة العائمة", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.overlay_instruction, Toast.LENGTH_LONG).show()
+        } else Toast.makeText(this, R.string.overlay_allowed, Toast.LENGTH_SHORT).show()
     }
 
     private fun startAlerts() {
@@ -84,7 +84,7 @@ class MainActivity : Activity() {
         if (!Settings.canDrawOverlays(this)) { enableOverlay(); return }
         val intent = Intent(this, AlertService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
-        Toast.makeText(this, "بدأت خدمة التنبيهات", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, R.string.alerts_started, Toast.LENGTH_SHORT).show()
     }
 
     private fun report(type: HazardType) {
@@ -97,15 +97,18 @@ class MainActivity : Activity() {
                 ?: lm.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
         }.getOrNull()
         if (location == null) {
-            Toast.makeText(this, "لم يتم تحديد موقعك بعد. شغّل GPS وانتظر قليلاً", Toast.LENGTH_LONG).show(); return
+            Toast.makeText(this, R.string.gps_wait, Toast.LENGTH_LONG).show(); return
         }
         store.add(Hazard(location.latitude, location.longitude, type))
-        Toast.makeText(this, "تم حفظ البلاغ على جهازك مؤقتًا", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, R.string.report_saved, Toast.LENGTH_SHORT).show()
         refreshStatus()
     }
 
     private fun refreshStatus() {
-        val counts = HazardType.values().associateWith { t -> store.all().count { it.type == t } }
-        status.text = "البلاغات على هذا الجهاز: رادارات ${counts[HazardType.SPEED_CAMERA]} | مطبات ${counts[HazardType.SPEED_BUMP]} | حفر ${counts[HazardType.POTHOLE]}\nمزامنة Firebase وقاعدة البيانات المشتركة قيد التجهيز."
+        val all = store.all()
+        status.text = getString(R.string.status_local,
+            all.count { it.type == HazardType.SPEED_CAMERA },
+            all.count { it.type == HazardType.SPEED_BUMP },
+            all.count { it.type == HazardType.POTHOLE }) + "\n" + getString(R.string.sync_pending)
     }
 }
