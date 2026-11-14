@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "523667735576",
+    "project_id": "matabaat",
+    "storage_bucket": "matabaat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:523667735576:android:31ab706cd1efea1139ef6d",
+        "android_client_info": {
+          "package_name": "com.roadalert.egypt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD07xCf85u0zrm6u2wpKamGIOjbIDAmUSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
