@@ -4,85 +4,39 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
-import android.net.Uri
+import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.content.pm.PackageManager
+import android.net.Uri
 import android.view.Gravity
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.view.View
+import android.widget.*
+import android.location.LocationManager
 
 class MainActivity : Activity() {
     private lateinit var store: HazardStore
-    private lateinit var status: TextView
     private var cloudSync: HazardCloudSync? = null
     private var cloudReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = HazardStore(this)
-
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(28, 28, 28, 28)
-            setBackgroundColor(0xFFF4F7FA.toInt())
-        }
-        val logo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_matabaat)
-            contentDescription = getString(R.string.app_name)
-            layoutParams = LinearLayout.LayoutParams(88, 88).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = 12 }
-        }
-        val title = TextView(this).apply {
-            text = getString(R.string.app_name); textSize = 28f
-            gravity = Gravity.CENTER; setTextColor(0xFF102A43.toInt())
-        }
-        val subtitle = TextView(this).apply {
-            text = getString(R.string.subtitle)
-            textSize = 16f; gravity = Gravity.CENTER
-            setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt())
-        }
-        status = TextView(this).apply { textSize = 14f; setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt()) }
-        val attribution = TextView(this).apply { text = getString(R.string.osm_attribution); textSize = 11f; setPadding(0, 0, 0, 14); setTextColor(0xFF627D98.toInt()) }
-        root.addView(logo); root.addView(title); root.addView(subtitle); root.addView(status); root.addView(attribution)
-        root.addView(actionButton(R.string.overlay) { enableOverlay() })
-        root.addView(actionButton(R.string.start_alerts) { startAlerts() })
-        root.addView(actionButton(R.string.stop_alerts) { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, R.string.alerts_stopped, Toast.LENGTH_SHORT).show() })
-        root.addView(actionButton(R.string.quick_report) { showQuickReport() })
-        root.addView(actionButton(R.string.refresh_road_data) { refreshRoadData(true) })
-        root.addView(actionButton(R.string.report_camera) { report(HazardType.SPEED_CAMERA) })
-        root.addView(actionButton(R.string.report_bump) { report(HazardType.SPEED_BUMP) })
-        root.addView(actionButton(R.string.report_pothole) { report(HazardType.POTHOLE) })
-        root.addView(actionButton(R.string.open_maps) {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com")))
-        })
-        setContentView(root)
-        refreshStatus()
-
-        // Firebase is optional for opening the app; a cloud initialization issue must not crash the UI.
+        buildDashboard()
         runCatching {
             HazardCloudSync(this).also { sync ->
                 cloudSync = sync
-                sync.start { ready -> runOnUiThread { cloudReady = ready; refreshStatus() } }
+                sync.start { ready -> runOnUiThread { cloudReady = ready; buildDashboard() } }
             }
-        }.onFailure {
-            cloudReady = false
-            refreshStatus()
         }
-
-        refreshRoadData(false)
-
         requestLocationPermission()
+        refreshRoadData(false)
         handleQuickReportIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleQuickReportIntent(intent)
+        super.onNewIntent(intent); setIntent(intent); handleQuickReportIntent(intent)
     }
 
     private fun handleQuickReportIntent(intent: Intent?) {
@@ -92,111 +46,194 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun actionButton(label: Int, action: () -> Unit) = Button(this).apply {
-        text = getString(label); isAllCaps = false; textSize = 15f; gravity = Gravity.CENTER
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private fun buildDashboard() {
+        val navy = Color.rgb(12, 27, 54)
+        val yellow = Color.rgb(255, 193, 7)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.rgb(244, 247, 251))
+            setPadding(dp(18), dp(14), dp(18), dp(18))
+        }
+        val scroll = ScrollView(this).apply { addView(root) }
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setBackgroundColor(navy)
+        }
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.matabaat_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            layoutParams = LinearLayout.LayoutParams(dp(170), dp(160))
+        }
+        header.addView(logo)
+        val brand = TextView(this).apply {
+            text = "مطبات  |  Matabaat"; textSize = 23f; setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        header.addView(brand)
+        val sub = TextView(this).apply {
+            text = "تنبيهات الطريق ومشاركة المخاطر"; textSize = 14f
+            setTextColor(Color.LTGRAY); gravity = Gravity.CENTER
+            setPadding(0, dp(6), 0, dp(4))
+        }
+        header.addView(sub)
+        root.addView(header, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
+
+        val all = store.all()
+        val counts = listOf(
+            Triple("🚨", "رادارات", HazardType.SPEED_CAMERA),
+            Triple("🟡", "مطبات", HazardType.SPEED_BUMP),
+            Triple("🕳️", "حفر", HazardType.POTHOLE)
+        )
+        val countRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        counts.forEach { item ->
+            val count = all.count { it.type == item.third }
+            val card = TextView(this).apply {
+                text = "${item.first}\n$count\n${item.second}\nاضغط للخريطة"
+                gravity = Gravity.CENTER; textSize = 15f; setTextColor(navy)
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(dp(4), dp(16), dp(4), dp(16))
+                setBackgroundColor(Color.WHITE); isClickable = true
+                setOnClickListener { openHazardMap(item.third) }
+            }
+            countRow.addView(card, LinearLayout.LayoutParams(0, dp(112), 1f).apply {
+                marginEnd = dp(6)
+            })
+        }
+        root.addView(countRow)
+        val sync = TextView(this).apply {
+            text = if (cloudReady) "● متصل بالمزامنة السحابية" else "● المزامنة السحابية معلّقة"
+            setTextColor(if (cloudReady) Color.rgb(28, 130, 78) else Color.DKGRAY)
+            textSize = 13f; setPadding(dp(4), dp(12), dp(4), dp(8))
+        }
+        root.addView(sync)
+        root.addView(sectionTitle("الإبلاغ عن خطر"))
+        root.addView(primaryButton("＋ بلاغ جديد") { showQuickReport() }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
+        root.addView(sectionTitle("الخريطة والتنبيهات"))
+        root.addView(actionButton("عرض كل المخاطر على الخريطة") { openHazardMap(null) })
+        root.addView(actionButton("تشغيل التنبيهات") { startAlerts() })
+        root.addView(actionButton("إيقاف التنبيهات") {
+            stopService(Intent(this, AlertService::class.java))
+            Toast.makeText(this, "تم إيقاف التنبيهات", Toast.LENGTH_SHORT).show()
+        })
+        root.addView(actionButton("تفعيل النافذة العائمة") { enableOverlay() })
+        root.addView(actionButton("تحديث بيانات الطريق حولي") { refreshRoadData(true) })
+        val attribution = TextView(this).apply {
+            text = getString(R.string.osm_attribution); textSize = 11f
+            setTextColor(Color.GRAY); setPadding(0, dp(14), 0, 0)
+        }
+        root.addView(attribution)
+        setContentView(scroll)
+    }
+
+    private fun sectionTitle(text: String) = TextView(this).apply {
+        this.text = text; textSize = 17f; setTextColor(Color.rgb(12, 27, 54))
+        setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, dp(14), 0, dp(8))
+    }
+
+    private fun primaryButton(label: String, action: () -> Unit) = Button(this).apply {
+        text = label; isAllCaps = false; textSize = 17f
+        setTextColor(Color.rgb(12, 27, 54)); setBackgroundColor(Color.rgb(255, 193, 7))
+        setOnClickListener { action() }
+    }
+
+    private fun actionButton(label: String, action: () -> Unit) = Button(this).apply {
+        text = label; isAllCaps = false; textSize = 15f
         setOnClickListener { action() }
     }
 
     private fun showQuickReport() {
-        val labels = arrayOf(getString(R.string.camera), getString(R.string.bump), getString(R.string.pothole))
+        val labels = arrayOf("رادار", "مطب", "حفرة")
         val types = arrayOf(HazardType.SPEED_CAMERA, HazardType.SPEED_BUMP, HazardType.POTHOLE)
-        AlertDialog.Builder(this)
-            .setTitle(R.string.quick_report_title)
-            .setItems(labels) { _, which -> report(types[which]) }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        AlertDialog.Builder(this).setTitle("إيه الخطر اللي قابلته؟")
+            .setItems(labels) { _, which -> chooseReportLocation(types[which]) }
+            .setNegativeButton("إلغاء", null).show()
+    }
+
+    private fun chooseReportLocation(type: HazardType) {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestLocationPermission()
+            Toast.makeText(this, "اسمح بالوصول للموقع ثم أعد البلاغ", Toast.LENGTH_LONG).show()
+            return
+        }
+        startActivityForResult(Intent(this, HazardMapActivity::class.java).apply {
+            putExtra(HazardMapActivity.EXTRA_PICK_LOCATION, true)
+        }, REQUEST_PICK_LOCATION)
+        pendingReportType = type
+    }
+
+    private var pendingReportType: HazardType? = null
+
+    @Deprecated("Activity result API retained for compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_PICK_LOCATION && resultCode == RESULT_OK && data != null) {
+            val lat = data.getDoubleExtra(HazardMapActivity.EXTRA_LAT, Double.NaN)
+            val lon = data.getDoubleExtra(HazardMapActivity.EXTRA_LON, Double.NaN)
+            val type = pendingReportType ?: return
+            if (lat.isFinite() && lon.isFinite()) {
+                val hazard = Hazard(lat, lon, type)
+                store.add(hazard)
+                Toast.makeText(this, "تم حفظ البلاغ عند النقطة المحددة على الخريطة", Toast.LENGTH_LONG).show()
+                cloudSync?.submit(hazard) { synced ->
+                    runOnUiThread {
+                        Toast.makeText(this, if (synced) "تمت المزامنة" else "سيتم الاحتفاظ به محليًا حتى تتاح المزامنة", Toast.LENGTH_LONG).show()
+                        buildDashboard()
+                    }
+                }
+                buildDashboard()
+            }
+        }
+        pendingReportType = null
+    }
+
+    private fun openHazardMap(type: HazardType?) {
+        startActivity(Intent(this, HazardMapActivity::class.java).apply {
+            if (type != null) putExtra(HazardMapActivity.EXTRA_TYPE, type.name)
+        })
     }
 
     private fun requestLocationPermission() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 10)
-        }
     }
 
     private fun enableOverlay() {
         if (!Settings.canDrawOverlays(this)) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-            Toast.makeText(this, R.string.overlay_instruction, Toast.LENGTH_LONG).show()
-        } else Toast.makeText(this, R.string.overlay_allowed, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "اسمح لمطبات بالظهور فوق التطبيقات ثم ارجع", Toast.LENGTH_LONG).show()
+        } else Toast.makeText(this, "النافذة العائمة مفعّلة", Toast.LENGTH_SHORT).show()
     }
 
     private fun startAlerts() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestLocationPermission(); return
-        }
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) { requestLocationPermission(); return }
         if (!Settings.canDrawOverlays(this)) { enableOverlay(); return }
-        val intent = Intent(this, AlertService::class.java)
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
-            Toast.makeText(this, R.string.alerts_started, Toast.LENGTH_SHORT).show()
-        } catch (error: Exception) {
-            Toast.makeText(this, getString(R.string.service_start_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
-        }
+            val i = Intent(this, AlertService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(i) else startService(i)
+            Toast.makeText(this, "بدأت خدمة التنبيهات", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) { Toast.makeText(this, "تعذر تشغيل التنبيهات: ${e.localizedMessage}", Toast.LENGTH_LONG).show() }
     }
-
 
     private fun refreshRoadData(force: Boolean) {
-        Toast.makeText(this, R.string.osm_import_started, Toast.LENGTH_SHORT).show()
-        val locationManager = getSystemService(LOCATION_SERVICE) as android.location.LocationManager
-        val location = runCatching {
-            locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-                ?: locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-        }.getOrNull()
-        if (location == null) {
-            if (force) Toast.makeText(this, R.string.gps_wait, Toast.LENGTH_LONG).show()
-            return
-        }
-        Toast.makeText(this, R.string.osm_import_started, Toast.LENGTH_SHORT).show()
-        cloudSync?.listenExternalForLocation(location.latitude, location.longitude)
-        OsmHazardImporter(this).importForLocation(location.latitude, location.longitude, force) { count, success ->
+        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+        val loc = runCatching {
+            lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+        }.getOrNull() ?: return
+        cloudSync?.listenExternalForLocation(loc.latitude, loc.longitude)
+        OsmHazardImporter(this).importForLocation(loc.latitude, loc.longitude, force) { count, success ->
             runOnUiThread {
-                if (count > 0) Toast.makeText(this, getString(R.string.osm_import_done, count), Toast.LENGTH_LONG).show()
-                if (success) Toast.makeText(this, R.string.osm_import_finished, Toast.LENGTH_SHORT).show()
-                else Toast.makeText(this, R.string.osm_import_failed, Toast.LENGTH_LONG).show()
-                refreshStatus()
+                if (force) Toast.makeText(this, if (success) "اكتمل تحديث بيانات المنطقة القريبة ($count نقطة جديدة)" else "تعذر تحديث بيانات الطريق", Toast.LENGTH_LONG).show()
+                buildDashboard()
             }
-            cloudSync?.publishOpenStreetMap { uploaded, total ->
-                runOnUiThread {
-                    if (uploaded && total > 0) Toast.makeText(this, getString(R.string.sync_complete) + " ($total OSM)", Toast.LENGTH_LONG).show()
-                    if (!uploaded) Toast.makeText(this, R.string.sync_pending, Toast.LENGTH_SHORT).show()
-                }
-            }
+            cloudSync?.publishOpenStreetMap()
         }
-    }
-
-    private fun report(type: HazardType) {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestLocationPermission(); return
-        }
-        val lm = getSystemService(LOCATION_SERVICE) as android.location.LocationManager
-        val location = runCatching {
-            lm.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-                ?: lm.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-        }.getOrNull()
-        if (location == null) {
-            Toast.makeText(this, R.string.gps_wait, Toast.LENGTH_LONG).show(); return
-        }
-        val hazard = Hazard(location.latitude, location.longitude, type)
-        store.add(hazard)
-        Toast.makeText(this, R.string.report_saved, Toast.LENGTH_SHORT).show()
-        cloudSync?.submit(hazard) { synced ->
-            runOnUiThread {
-                Toast.makeText(this, if (synced) R.string.sync_complete else R.string.sync_pending, Toast.LENGTH_SHORT).show()
-                refreshStatus()
-            }
-        }
-        refreshStatus()
-    }
-
-    private fun refreshStatus() {
-        val all = runCatching { store.all() }.getOrDefault(emptyList())
-        status.text = getString(R.string.status_local,
-            all.count { it.type == HazardType.SPEED_CAMERA },
-            all.count { it.type == HazardType.SPEED_BUMP },
-            all.count { it.type == HazardType.POTHOLE }) + "\n" + getString(if (cloudReady) R.string.sync_ready else R.string.sync_pending)
     }
 
     companion object {
         const val ACTION_QUICK_REPORT = "com.roadalert.egypt.ACTION_QUICK_REPORT"
+        private const val REQUEST_PICK_LOCATION = 41
     }
 }
