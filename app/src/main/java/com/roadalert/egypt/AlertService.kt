@@ -26,6 +26,8 @@ class AlertService : Service(), LocationListener {
     private var cloudSync: HazardCloudSync? = null
     private var lastAlertKey = ""
     private var lastAlertAt = 0L
+    private lateinit var osmImporter: OsmHazardImporter
+    private var lastTileCheckAt = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -34,6 +36,7 @@ class AlertService : Service(), LocationListener {
         startForeground(44, notification(getString(R.string.service_tracking)))
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         showBubble(getString(R.string.service_locating))
+        osmImporter = OsmHazardImporter(this)
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         try {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1500L, 5f, this)
@@ -80,6 +83,13 @@ class AlertService : Service(), LocationListener {
     }
 
     override fun onLocationChanged(location: Location) {
+        // Check the current map tile periodically; unseen tiles are downloaded automatically.
+        if (System.currentTimeMillis() - lastTileCheckAt >= 30_000L) {
+            lastTileCheckAt = System.currentTimeMillis()
+            osmImporter.importForLocation(location.latitude, location.longitude) { count, success ->
+                if (count > 0 || !success) runCatching { cloudSync?.publishOpenStreetMap() }
+            }
+        }
         val nearest = Geo.nearest(location.latitude, location.longitude, store.all())
         if (nearest == null) { showBubble(getString(R.string.no_nearby)); return }
         val (hazard, distance) = nearest
