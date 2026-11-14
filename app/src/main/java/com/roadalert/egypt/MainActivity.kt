@@ -147,6 +147,7 @@ class MainActivity : Activity() {
             return
         }
         Toast.makeText(this, R.string.osm_import_started, Toast.LENGTH_SHORT).show()
+        cloudSync?.listenExternalForLocation(location.latitude, location.longitude)
         OsmHazardImporter(this).importForLocation(location.latitude, location.longitude, force) { count, success ->
             runOnUiThread {
                 if (count > 0) Toast.makeText(this, getString(R.string.osm_import_done, count), Toast.LENGTH_LONG).show()
