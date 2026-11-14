@@ -46,7 +46,8 @@ class MainActivity : Activity() {
             setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt())
         }
         status = TextView(this).apply { textSize = 14f; setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt()) }
-        root.addView(logo); root.addView(title); root.addView(subtitle); root.addView(status)
+        val attribution = TextView(this).apply { text = getString(R.string.osm_attribution); textSize = 11f; setPadding(0, 0, 0, 14); setTextColor(0xFF627D98.toInt()) }
+        root.addView(logo); root.addView(title); root.addView(subtitle); root.addView(status); root.addView(attribution)
         root.addView(actionButton(R.string.overlay) { enableOverlay() })
         root.addView(actionButton(R.string.start_alerts) { startAlerts() })
         root.addView(actionButton(R.string.stop_alerts) { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, R.string.alerts_stopped, Toast.LENGTH_SHORT).show() })
@@ -69,6 +70,15 @@ class MainActivity : Activity() {
         }.onFailure {
             cloudReady = false
             refreshStatus()
+        }
+
+        // Import public Egypt road data in the background; cached locally and refreshed weekly.
+        OsmHazardImporter(this).importIfDue { count, success ->
+            runOnUiThread {
+                if (count > 0) Toast.makeText(this, getString(R.string.osm_import_done, count), Toast.LENGTH_LONG).show()
+                if (!success) Toast.makeText(this, R.string.osm_import_failed, Toast.LENGTH_LONG).show()
+                refreshStatus()
+            }
         }
 
         requestLocationPermission()
