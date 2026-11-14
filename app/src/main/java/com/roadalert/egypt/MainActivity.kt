@@ -79,6 +79,13 @@ class MainActivity : Activity() {
                 if (!success) Toast.makeText(this, R.string.osm_import_failed, Toast.LENGTH_LONG).show()
                 refreshStatus()
             }
+            // Publish cached OSM points to the shared external collection; community reports stay separate.
+            cloudSync?.publishOpenStreetMap { uploaded, total ->
+                runOnUiThread {
+                    if (uploaded && total > 0) Toast.makeText(this, getString(R.string.sync_complete) + " ($total OSM)", Toast.LENGTH_LONG).show()
+                    if (!uploaded) Toast.makeText(this, R.string.sync_pending, Toast.LENGTH_LONG).show()
+                }
+            }
         }
 
         requestLocationPermission()
