@@ -28,6 +28,7 @@ class AlertService : Service(), LocationListener {
     private var lastAlertAt = 0L
     private lateinit var osmImporter: OsmHazardImporter
     private var lastTileCheckAt = 0L
+    private var lastCloudTileKey = ""
 
     override fun onCreate() {
         super.onCreate()
@@ -86,7 +87,11 @@ class AlertService : Service(), LocationListener {
         // Check the current map tile periodically; unseen tiles are downloaded automatically.
         if (System.currentTimeMillis() - lastTileCheckAt >= 30_000L) {
             lastTileCheckAt = System.currentTimeMillis()
-            cloudSync?.listenExternalForLocation(location.latitude, location.longitude)
+            val tileKey = "${kotlin.math.floor(location.latitude / 0.25)}_${kotlin.math.floor(location.longitude / 0.25)}"
+            if (tileKey != lastCloudTileKey) {
+                lastCloudTileKey = tileKey
+                cloudSync?.listenExternalForLocation(location.latitude, location.longitude)
+            }
             osmImporter.importForLocation(location.latitude, location.longitude) { count, success ->
                 if (count > 0) runCatching { cloudSync?.publishOpenStreetMap() }
             }
