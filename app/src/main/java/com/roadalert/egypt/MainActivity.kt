@@ -52,6 +52,7 @@ class MainActivity : Activity() {
         root.addView(actionButton(R.string.start_alerts) { startAlerts() })
         root.addView(actionButton(R.string.stop_alerts) { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, R.string.alerts_stopped, Toast.LENGTH_SHORT).show() })
         root.addView(actionButton(R.string.quick_report) { showQuickReport() })
+        root.addView(actionButton(R.string.refresh_road_data) { refreshRoadData(true) })
         root.addView(actionButton(R.string.report_camera) { report(HazardType.SPEED_CAMERA) })
         root.addView(actionButton(R.string.report_bump) { report(HazardType.SPEED_BUMP) })
         root.addView(actionButton(R.string.report_pothole) { report(HazardType.POTHOLE) })
@@ -72,21 +73,7 @@ class MainActivity : Activity() {
             refreshStatus()
         }
 
-        // Import public Egypt road data in the background; cached locally and refreshed weekly.
-        OsmHazardImporter(this).importIfDue { count, success ->
-            runOnUiThread {
-                if (count > 0) Toast.makeText(this, getString(R.string.osm_import_done, count), Toast.LENGTH_LONG).show()
-                if (!success) Toast.makeText(this, R.string.osm_import_failed, Toast.LENGTH_LONG).show()
-                refreshStatus()
-            }
-            // Publish cached OSM points to the shared external collection; community reports stay separate.
-            cloudSync?.publishOpenStreetMap { uploaded, total ->
-                runOnUiThread {
-                    if (uploaded && total > 0) Toast.makeText(this, getString(R.string.sync_complete) + " ($total OSM)", Toast.LENGTH_LONG).show()
-                    if (!uploaded) Toast.makeText(this, R.string.sync_pending, Toast.LENGTH_LONG).show()
-                }
-            }
-        }
+        refreshRoadData(false)
 
         requestLocationPermission()
         handleQuickReportIntent(intent)
@@ -144,6 +131,25 @@ class MainActivity : Activity() {
             Toast.makeText(this, R.string.alerts_started, Toast.LENGTH_SHORT).show()
         } catch (error: Exception) {
             Toast.makeText(this, getString(R.string.service_start_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
+        }
+    }
+
+
+    private fun refreshRoadData(force: Boolean) {
+        Toast.makeText(this, R.string.osm_import_started, Toast.LENGTH_SHORT).show()
+        OsmHazardImporter(this).importIfDue(force) { count, success ->
+            runOnUiThread {
+                if (count > 0) Toast.makeText(this, getString(R.string.osm_import_done, count), Toast.LENGTH_LONG).show()
+                if (success) Toast.makeText(this, R.string.osm_import_finished, Toast.LENGTH_SHORT).show()
+                else Toast.makeText(this, R.string.osm_import_failed, Toast.LENGTH_LONG).show()
+                refreshStatus()
+            }
+            cloudSync?.publishOpenStreetMap { uploaded, total ->
+                runOnUiThread {
+                    if (uploaded && total > 0) Toast.makeText(this, getString(R.string.sync_complete) + " ($total OSM)", Toast.LENGTH_LONG).show()
+                    if (!uploaded) Toast.makeText(this, R.string.sync_pending, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
