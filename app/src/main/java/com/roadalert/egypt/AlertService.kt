@@ -23,11 +23,14 @@ class AlertService : Service(), LocationListener {
     private lateinit var windowManager: WindowManager
     private var bubble: TextView? = null
     private val store by lazy { HazardStore(this) }
+    private lateinit var cloudSync: HazardCloudSync
     private var lastAlertKey = ""
     private var lastAlertAt = 0L
 
     override fun onCreate() {
         super.onCreate()
+        cloudSync = HazardCloudSync(this)
+        cloudSync.start()
         createChannel()
         startForeground(44, notification(getString(R.string.service_tracking)))
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -93,6 +96,7 @@ class AlertService : Service(), LocationListener {
 
     override fun onDestroy() {
         runCatching { locationManager.removeUpdates(this) }
+        if (::cloudSync.isInitialized) cloudSync.stop()
         bubble?.let { runCatching { windowManager.removeView(it) } }
         bubble = null
         super.onDestroy()
