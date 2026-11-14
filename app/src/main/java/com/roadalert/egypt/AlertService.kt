@@ -86,8 +86,9 @@ class AlertService : Service(), LocationListener {
         // Check the current map tile periodically; unseen tiles are downloaded automatically.
         if (System.currentTimeMillis() - lastTileCheckAt >= 30_000L) {
             lastTileCheckAt = System.currentTimeMillis()
+            cloudSync?.listenExternalForLocation(location.latitude, location.longitude)
             osmImporter.importForLocation(location.latitude, location.longitude) { count, success ->
-                if (count > 0 || !success) runCatching { cloudSync?.publishOpenStreetMap() }
+                if (count > 0) runCatching { cloudSync?.publishOpenStreetMap() }
             }
         }
         val nearest = Geo.nearest(location.latitude, location.longitude, store.all())
