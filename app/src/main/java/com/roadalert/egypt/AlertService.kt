@@ -23,14 +23,13 @@ class AlertService : Service(), LocationListener {
     private lateinit var windowManager: WindowManager
     private var bubble: TextView? = null
     private val store by lazy { HazardStore(this) }
-    private lateinit var cloudSync: HazardCloudSync
+    private var cloudSync: HazardCloudSync? = null
     private var lastAlertKey = ""
     private var lastAlertAt = 0L
 
     override fun onCreate() {
         super.onCreate()
-        cloudSync = HazardCloudSync(this)
-        cloudSync.start()
+        runCatching { HazardCloudSync(this).also { cloudSync = it; it.start() } }
         createChannel()
         startForeground(44, notification(getString(R.string.service_tracking)))
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -59,8 +58,17 @@ class AlertService : Service(), LocationListener {
     private fun showBubble(text: String) {
         if (bubble == null) {
             bubble = TextView(this).apply {
-                setTextColor(0xFFFFFFFF.toInt()); setBackgroundColor(0xEE102A43.toInt())
-                textSize = 14f; setPadding(22, 14, 22, 14)
+                setTextColor(0xFFFFFFFF.toInt()); setBackgroundColor(0xFF102A43.toInt())
+                textSize = 14f; setPadding(22, 16, 22, 16)
+                isClickable = true
+                contentDescription = getString(R.string.quick_report)
+                setOnClickListener {
+                    val openReport = Intent(this@AlertService, MainActivity::class.java).apply {
+                        action = MainActivity.ACTION_QUICK_REPORT
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                    runCatching { startActivity(openReport) }
+                }
             }
             val type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             val params = WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, type,
@@ -68,7 +76,7 @@ class AlertService : Service(), LocationListener {
                 PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.END; x = 18; y = 140 }
             runCatching { windowManager.addView(bubble, params) }.onFailure { stopSelf() }
         }
-        bubble?.text = text
+        bubble?.text = "＋ " + getString(R.string.quick_report_short) + "\n" + text
     }
 
     override fun onLocationChanged(location: Location) {
@@ -81,7 +89,7 @@ class AlertService : Service(), LocationListener {
             HazardType.POTHOLE -> getString(R.string.pothole_reported)
         }
         val meters = distance.toInt()
-        showBubble("⚠ " + getString(R.string.alert_distance, label, meters))
+        showBubble(getString(R.string.alert_distance, label, meters))
         val key = "${hazard.type}:${hazard.latitude}:${hazard.longitude}"
         if (distance <= 350f && (key != lastAlertKey || System.currentTimeMillis() - lastAlertAt > 45000L)) {
             lastAlertKey = key; lastAlertAt = System.currentTimeMillis()
@@ -95,9 +103,9 @@ class AlertService : Service(), LocationListener {
     @Deprecated("Deprecated in Android API") override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
 
     override fun onDestroy() {
-        runCatching { locationManager.removeUpdates(this) }
-        if (::cloudSync.isInitialized) cloudSync.stop()
-        bubble?.let { runCatching { windowManager.removeView(it) } }
+        runCatching { if (::locationManager.isInitialized) locationManager.removeUpdates(this) }
+        cloudSync?.stop()
+        bubble?.let { runCatching { if (::windowManager.isInitialized) windowManager.removeView(it) } }
         bubble = null
         super.onDestroy()
     }
