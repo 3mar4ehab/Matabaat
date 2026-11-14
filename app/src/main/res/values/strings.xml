@@ -23,6 +23,7 @@
     <string name="status_local">Reports on this device: cameras %1$d | bumps %2$d | potholes %3$d</string>
     <string name="sync_pending">Saved on this phone. Cloud sync is not available yet.</string>
     <string name="sync_complete">Shared report uploaded successfully</string>
+    <string name="sync_ready">Connected to shared reports</string>
     <string name="service_tracking">Monitoring the road</string>
     <string name="service_locating">Finding location…</string>
     <string name="no_nearby">No nearby reports</string>
