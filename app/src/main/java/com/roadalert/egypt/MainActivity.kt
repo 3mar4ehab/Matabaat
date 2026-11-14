@@ -11,6 +11,7 @@ import android.provider.Settings
 import android.content.pm.PackageManager
 import android.view.Gravity
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -18,26 +19,34 @@ import android.widget.Toast
 class MainActivity : Activity() {
     private lateinit var store: HazardStore
     private lateinit var status: TextView
-    private lateinit var cloudSync: HazardCloudSync
+    private var cloudSync: HazardCloudSync? = null
     private var cloudReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = HazardStore(this)
-        cloudSync = HazardCloudSync(this)
-        cloudSync.start { ready -> runOnUiThread { cloudReady = ready; refreshStatus() } }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(28, 36, 28, 28)
+            setPadding(28, 28, 28, 28)
             setBackgroundColor(0xFFF4F7FA.toInt())
         }
-        val title = TextView(this).apply { text = getString(R.string.app_name); textSize = 28f; setTextColor(0xFF102A43.toInt()) }
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.ic_matabaat)
+            contentDescription = getString(R.string.app_name)
+            layoutParams = LinearLayout.LayoutParams(88, 88).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = 12 }
+        }
+        val title = TextView(this).apply {
+            text = getString(R.string.app_name); textSize = 28f
+            gravity = Gravity.CENTER; setTextColor(0xFF102A43.toInt())
+        }
         val subtitle = TextView(this).apply {
             text = getString(R.string.subtitle)
-            textSize = 16f; setPadding(0, 12, 0, 24); setTextColor(0xFF334E68.toInt())
+            textSize = 16f; gravity = Gravity.CENTER
+            setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt())
         }
         status = TextView(this).apply { textSize = 14f; setPadding(0, 8, 0, 18); setTextColor(0xFF334E68.toInt()) }
-        root.addView(title); root.addView(subtitle); root.addView(status)
+        root.addView(logo); root.addView(title); root.addView(subtitle); root.addView(status)
         root.addView(actionButton(R.string.overlay) { enableOverlay() })
         root.addView(actionButton(R.string.start_alerts) { startAlerts() })
         root.addView(actionButton(R.string.stop_alerts) { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, R.string.alerts_stopped, Toast.LENGTH_SHORT).show() })
@@ -50,7 +59,33 @@ class MainActivity : Activity() {
         })
         setContentView(root)
         refreshStatus()
+
+        // Firebase is optional for opening the app; a cloud initialization issue must not crash the UI.
+        runCatching {
+            HazardCloudSync(this).also { sync ->
+                cloudSync = sync
+                sync.start { ready -> runOnUiThread { cloudReady = ready; refreshStatus() } }
+            }
+        }.onFailure {
+            cloudReady = false
+            refreshStatus()
+        }
+
         requestLocationPermission()
+        handleQuickReportIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleQuickReportIntent(intent)
+    }
+
+    private fun handleQuickReportIntent(intent: Intent?) {
+        if (intent?.action == ACTION_QUICK_REPORT) {
+            intent.action = null
+            window.decorView.post { showQuickReport() }
+        }
     }
 
     private fun actionButton(label: Int, action: () -> Unit) = Button(this).apply {
@@ -87,8 +122,12 @@ class MainActivity : Activity() {
         }
         if (!Settings.canDrawOverlays(this)) { enableOverlay(); return }
         val intent = Intent(this, AlertService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
-        Toast.makeText(this, R.string.alerts_started, Toast.LENGTH_SHORT).show()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent) else startService(intent)
+            Toast.makeText(this, R.string.alerts_started, Toast.LENGTH_SHORT).show()
+        } catch (error: Exception) {
+            Toast.makeText(this, getString(R.string.service_start_failed, error.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun report(type: HazardType) {
@@ -106,7 +145,7 @@ class MainActivity : Activity() {
         val hazard = Hazard(location.latitude, location.longitude, type)
         store.add(hazard)
         Toast.makeText(this, R.string.report_saved, Toast.LENGTH_SHORT).show()
-        cloudSync.submit(hazard) { synced ->
+        cloudSync?.submit(hazard) { synced ->
             runOnUiThread {
                 Toast.makeText(this, if (synced) R.string.sync_complete else R.string.sync_pending, Toast.LENGTH_SHORT).show()
                 refreshStatus()
@@ -116,10 +155,14 @@ class MainActivity : Activity() {
     }
 
     private fun refreshStatus() {
-        val all = store.all()
+        val all = runCatching { store.all() }.getOrDefault(emptyList())
         status.text = getString(R.string.status_local,
             all.count { it.type == HazardType.SPEED_CAMERA },
             all.count { it.type == HazardType.SPEED_BUMP },
             all.count { it.type == HazardType.POTHOLE }) + "\n" + getString(if (cloudReady) R.string.sync_ready else R.string.sync_pending)
+    }
+
+    companion object {
+        const val ACTION_QUICK_REPORT = "com.roadalert.egypt.ACTION_QUICK_REPORT"
     }
 }
