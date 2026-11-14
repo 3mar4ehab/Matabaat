@@ -21,7 +21,8 @@
     <string name="gps_wait">لم يتم تحديد موقعك بعد. شغّل GPS وانتظر قليلاً</string>
     <string name="report_saved">تم حفظ البلاغ على هذا الجهاز مؤقتًا</string>
     <string name="status_local">البلاغات على هذا الجهاز: رادارات %1$d | مطبات %2$d | حفر %3$d</string>
-    <string name="sync_pending">مزامنة Firebase وقاعدة البيانات المشتركة قيد التجهيز.</string>
+    <string name="sync_pending">تم الحفظ على الهاتف. المزامنة السحابية غير متاحة حاليًا.</string>
+    <string name="sync_complete">تم رفع البلاغ ومشاركته بنجاح</string>
     <string name="service_tracking">جاري متابعة الطريق</string>
     <string name="service_locating">مطبات\nجاري تحديد الموقع...</string>
     <string name="no_nearby">مطبات\nلا توجد بلاغات قريبة</string>
