@@ -47,6 +47,10 @@ class OsmHazardImporter(context: Context) {
                     if (connection.responseCode !in 200..299) error("Overpass HTTP " + connection.responseCode)
                     val response = connection.inputStream.bufferedReader().use { it.readText() }
                     val elements = JSONObject(response).optJSONArray("elements") ?: error("Invalid Overpass response")
+                    val existingKeys = store.all().mapNotNull { h ->
+                        if (h.source == HazardSource.OPENSTREETMAP && h.sourceId.isNotBlank()) "${h.type}:${h.sourceId}" else null
+                    }.toHashSet()
+                    val additions = mutableListOf<Hazard>()
                     for (i in 0 until elements.length()) {
                         val item = elements.optJSONObject(i) ?: continue
                         val tags = item.optJSONObject("tags") ?: continue
@@ -70,10 +74,11 @@ class OsmHazardImporter(context: Context) {
                         val kind = item.optString("type", "node")
                         val hazard = Hazard(lat, lon, type, System.currentTimeMillis(),
                             HazardSource.OPENSTREETMAP, kind + "/" + id)
-                        val before = store.all().size
-                        store.addIfMissing(hazard)
-                        if (store.all().size > before) imported++
+                        val key = "${hazard.type}:${hazard.sourceId}"
+                        if (existingKeys.add(key)) additions.add(hazard)
                     }
+                    additions.forEach { store.addIfMissing(it) }
+                    imported = additions.size
                     prefs.edit().putLong("osm_last_success", System.currentTimeMillis()).apply()
                     success = true
                 } finally {
