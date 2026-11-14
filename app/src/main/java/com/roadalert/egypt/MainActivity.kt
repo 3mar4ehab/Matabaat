@@ -18,10 +18,13 @@ import android.widget.Toast
 class MainActivity : Activity() {
     private lateinit var store: HazardStore
     private lateinit var status: TextView
+    private lateinit var cloudSync: HazardCloudSync
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         store = HazardStore(this)
+        cloudSync = HazardCloudSync(this)
+        cloudSync.start { runOnUiThread { refreshStatus() } }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(28, 36, 28, 28)
@@ -99,8 +102,15 @@ class MainActivity : Activity() {
         if (location == null) {
             Toast.makeText(this, R.string.gps_wait, Toast.LENGTH_LONG).show(); return
         }
-        store.add(Hazard(location.latitude, location.longitude, type))
+        val hazard = Hazard(location.latitude, location.longitude, type)
+        store.add(hazard)
         Toast.makeText(this, R.string.report_saved, Toast.LENGTH_SHORT).show()
+        cloudSync.submit(hazard) { synced ->
+            runOnUiThread {
+                Toast.makeText(this, if (synced) R.string.sync_complete else R.string.sync_pending, Toast.LENGTH_SHORT).show()
+                refreshStatus()
+            }
+        }
         refreshStatus()
     }
 
