@@ -16,8 +16,8 @@ android {
         applicationId = "com.roadalert.egypt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.07"
+        versionCode = 8
+        versionName = "0.08"
     }
     signingConfigs {
         if (!signingStore.isNullOrBlank()) {
