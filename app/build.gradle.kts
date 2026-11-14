@@ -7,23 +7,18 @@ plugins {
 android {
     namespace = "com.roadalert.egypt"
     compileSdk = 35
-
     defaultConfig {
         applicationId = "com.roadalert.egypt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.04"
+        versionCode = 5
+        versionName = "0.05"
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
