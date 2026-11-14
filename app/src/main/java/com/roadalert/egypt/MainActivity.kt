@@ -2,6 +2,7 @@ package com.roadalert.egypt
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -36,6 +37,7 @@ class MainActivity : Activity() {
         root.addView(actionButton("تفعيل النافذة العائمة") { enableOverlay() })
         root.addView(actionButton("تشغيل التنبيهات") { startAlerts() })
         root.addView(actionButton("إيقاف التنبيهات") { stopService(Intent(this, AlertService::class.java)); Toast.makeText(this, "تم إيقاف التنبيهات", Toast.LENGTH_SHORT).show() })
+        root.addView(actionButton("＋ إبلاغ سريع عن خطر بالطريق") { showQuickReport() })
         root.addView(actionButton("إبلاغ عن رادار هنا") { report(HazardType.SPEED_CAMERA) })
         root.addView(actionButton("إبلاغ عن مطب هنا") { report(HazardType.SPEED_BUMP) })
         root.addView(actionButton("إبلاغ عن حفرة هنا") { report(HazardType.POTHOLE) })
@@ -50,6 +52,16 @@ class MainActivity : Activity() {
     private fun actionButton(label: String, action: () -> Unit) = Button(this).apply {
         text = label; isAllCaps = false; textSize = 15f; gravity = Gravity.CENTER
         setOnClickListener { action() }
+    }
+
+    private fun showQuickReport() {
+        val labels = arrayOf("🚨 رادار", "🟡 مطب", "🕳️ حفرة")
+        val types = arrayOf(HazardType.SPEED_CAMERA, HazardType.SPEED_BUMP, HazardType.POTHOLE)
+        AlertDialog.Builder(this)
+            .setTitle("إيه الخطر اللي قابلته؟")
+            .setItems(labels) { _, which -> report(types[which]) }
+            .setNegativeButton("إلغاء", null)
+            .show()
     }
 
     private fun requestLocationPermission() {
@@ -88,12 +100,12 @@ class MainActivity : Activity() {
             Toast.makeText(this, "لم يتم تحديد موقعك بعد. شغّل GPS وانتظر قليلاً", Toast.LENGTH_LONG).show(); return
         }
         store.add(Hazard(location.latitude, location.longitude, type))
-        Toast.makeText(this, "تم حفظ البلاغ على جهازك", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "تم حفظ البلاغ على جهازك مؤقتًا", Toast.LENGTH_SHORT).show()
         refreshStatus()
     }
 
     private fun refreshStatus() {
         val counts = HazardType.values().associateWith { t -> store.all().count { it.type == t } }
-        status.text = "البلاغات المحفوظة على هذا الجهاز: رادارات ${counts[HazardType.SPEED_CAMERA]} | مطبات ${counts[HazardType.SPEED_BUMP]} | حفر ${counts[HazardType.POTHOLE]}\nالنسخة التجريبية لا تحتوي بعد على قاعدة بيانات مشتركة."
+        status.text = "البلاغات على هذا الجهاز: رادارات ${counts[HazardType.SPEED_CAMERA]} | مطبات ${counts[HazardType.SPEED_BUMP]} | حفر ${counts[HazardType.POTHOLE]}\nمزامنة Firebase وقاعدة البيانات المشتركة قيد التجهيز."
     }
 }
