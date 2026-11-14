@@ -27,12 +27,18 @@
     <string name="sync_complete">تم رفع البلاغ ومشاركته بنجاح</string>
     <string name="sync_ready">متصل بقاعدة البلاغات المشتركة</string>
     <string name="service_tracking">جاري متابعة الطريق</string>
-    <string name="service_locating">مطبات\nجاري تحديد الموقع...</string>
-    <string name="no_nearby">مطبات\nلا توجد بلاغات قريبة</string>
-    <string name="enable_gps">مطبات\nفعّل GPS للحصول على التنبيهات</string>
+    <string name="service_locating">مطبات
+جاري تحديد الموقع...</string>
+    <string name="no_nearby">مطبات
+لا توجد بلاغات قريبة</string>
+    <string name="enable_gps">مطبات
+فعّل GPS للحصول على التنبيهات</string>
     <string name="camera_reported">رادار مُبلّغ عنه</string>
     <string name="bump_reported">مطب مُبلّغ عنه</string>
     <string name="pothole_reported">حفرة مُبلّغ عنها</string>
     <string name="alert_distance">%1$s على بعد %2$d متر</string>
     <string name="notification_channel">تنبيهات مطبات للطريق</string>
+    <string name="osm_attribution">بيانات الطريق: © مساهمو OpenStreetMap (ODbL)</string>
+    <string name="osm_import_done">تم استيراد %1$d نقطة طريق من OpenStreetMap</string>
+    <string name="osm_import_failed">تعذر تنزيل بيانات OpenStreetMap. حاول مرة أخرى لاحقًا.</string>
 </resources>
