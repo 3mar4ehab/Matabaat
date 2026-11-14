@@ -6,10 +6,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 
-/**
- * Anonymous-authenticated Firestore sync.
- * Firestore collection: hazards; fields: latitude, longitude, type, createdAt.
- */
+/** Anonymous-authenticated Firestore sync for user reports. */
 class HazardCloudSync(context: Context) {
     private val appContext = context.applicationContext
     private val auth = FirebaseAuth.getInstance()
@@ -24,10 +21,7 @@ class HazardCloudSync(context: Context) {
             return
         }
         auth.signInAnonymously()
-            .addOnSuccessListener {
-                listen()
-                onReady?.invoke(true)
-            }
+            .addOnSuccessListener { listen(); onReady?.invoke(true) }
             .addOnFailureListener { error ->
                 Log.e("MatabaatCloud", "Anonymous sign-in failed", error)
                 onReady?.invoke(false)
@@ -44,11 +38,10 @@ class HazardCloudSync(context: Context) {
             snapshot?.documents?.forEach { doc ->
                 val lat = doc.getDouble("latitude") ?: return@forEach
                 val lon = doc.getDouble("longitude") ?: return@forEach
-                val type = runCatching { HazardType.valueOf(doc.getString("type") ?: "") }.getOrNull()
-                    ?: return@forEach
+                val type = runCatching { HazardType.valueOf(doc.getString("type") ?: "") }.getOrNull() ?: return@forEach
                 val createdAt = doc.getLong("createdAt") ?: 0L
                 if (lat in -90.0..90.0 && lon in -180.0..180.0) {
-                    store.addIfMissing(Hazard(lat, lon, type, createdAt))
+                    store.addIfMissing(Hazard(lat, lon, type, createdAt, HazardSource.FIRESTORE, doc.id))
                 }
             }
         }
@@ -56,15 +49,10 @@ class HazardCloudSync(context: Context) {
 
     fun submit(hazard: Hazard, onComplete: ((Boolean) -> Unit)? = null) {
         start { signedIn ->
-            if (!signedIn) {
-                onComplete?.invoke(false)
-                return@start
-            }
+            if (!signedIn) { onComplete?.invoke(false); return@start }
             val data = hashMapOf(
-                "latitude" to hazard.latitude,
-                "longitude" to hazard.longitude,
-                "type" to hazard.type.name,
-                "createdAt" to hazard.createdAt
+                "latitude" to hazard.latitude, "longitude" to hazard.longitude,
+                "type" to hazard.type.name, "createdAt" to hazard.createdAt
             )
             db.collection("hazards").add(data)
                 .addOnSuccessListener { onComplete?.invoke(true) }
@@ -75,8 +63,5 @@ class HazardCloudSync(context: Context) {
         }
     }
 
-    fun stop() {
-        listener?.remove()
-        listener = null
-    }
+    fun stop() { listener?.remove(); listener = null }
 }
