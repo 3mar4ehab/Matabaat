@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Matabaat</string>
+    <string name="subtitle">Road alerts for speed cameras, bumps and potholes</string>
+    <string name="overlay">Enable floating window</string>
+    <string name="start_alerts">Start alerts</string>
+    <string name="stop_alerts">Stop alerts</string>
+    <string name="quick_report">＋ Quick road hazard report</string>
+    <string name="report_camera">Report speed camera here</string>
+    <string name="report_bump">Report speed bump here</string>
+    <string name="report_pothole">Report pothole here</string>
+    <string name="open_maps">Open Google Maps</string>
+    <string name="quick_report_title">What hazard did you see?</string>
+    <string name="camera">🚨 Speed camera</string>
+    <string name="bump">🟡 Speed bump</string>
+    <string name="pothole">🕳️ Pothole</string>
+    <string name="cancel">Cancel</string>
+    <string name="overlay_allowed">Floating window permission is enabled</string>
+    <string name="overlay_instruction">Allow Matabaat to display over other apps, then return</string>
+    <string name="alerts_started">Alerts started</string>
+    <string name="alerts_stopped">Alerts stopped</string>
+    <string name="gps_wait">Could not get your location yet. Turn on GPS and wait a moment.</string>
+    <string name="report_saved">Report saved on this device temporarily</string>
+    <string name="status_local">Reports on this device: cameras %1$d | bumps %2$d | potholes %3$d</string>
+    <string name="sync_pending">Firebase sync and shared database setup are still in progress.</string>
+    <string name="service_tracking">Monitoring the road</string>
+    <string name="service_locating">Finding location…</string>
+    <string name="no_nearby">No nearby reports</string>
+    <string name="enable_gps">Enable GPS to receive alerts</string>
+    <string name="camera_reported">Reported speed camera</string>
+    <string name="bump_reported">Reported speed bump</string>
+    <string name="pothole_reported">Reported pothole</string>
+    <string name="alert_distance">%1$s, %2$d meters away</string>
+    <string name="notification_channel">Matabaat road alerts</string>
+</resources>
