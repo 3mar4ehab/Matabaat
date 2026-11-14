@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">مطبات</string>
+    <string name="subtitle">تنبيهات الرادارات والمطبات والحفر على الطريق</string>
+    <string name="overlay">تفعيل النافذة العائمة</string>
+    <string name="start_alerts">تشغيل التنبيهات</string>
+    <string name="stop_alerts">إيقاف التنبيهات</string>
+    <string name="quick_report">＋ إبلاغ سريع عن خطر بالطريق</string>
+    <string name="report_camera">إبلاغ عن رادار هنا</string>
+    <string name="report_bump">إبلاغ عن مطب هنا</string>
+    <string name="report_pothole">إبلاغ عن حفرة هنا</string>
+    <string name="open_maps">فتح خرائط Google</string>
+    <string name="quick_report_title">إيه الخطر اللي قابلته؟</string>
+    <string name="camera">🚨 رادار</string>
+    <string name="bump">🟡 مطب</string>
+    <string name="pothole">🕳️ حفرة</string>
+    <string name="cancel">إلغاء</string>
+    <string name="overlay_allowed">تم السماح بالنافذة العائمة</string>
+    <string name="overlay_instruction">اسمح لتطبيق مطبات بالظهور فوق التطبيقات ثم ارجع</string>
+    <string name="alerts_started">بدأت خدمة التنبيهات</string>
+    <string name="alerts_stopped">تم إيقاف التنبيهات</string>
+    <string name="gps_wait">لم يتم تحديد موقعك بعد. شغّل GPS وانتظر قليلاً</string>
+    <string name="report_saved">تم حفظ البلاغ على هذا الجهاز مؤقتًا</string>
+    <string name="status_local">البلاغات على هذا الجهاز: رادارات %1$d | مطبات %2$d | حفر %3$d</string>
+    <string name="sync_pending">مزامنة Firebase وقاعدة البيانات المشتركة قيد التجهيز.</string>
+    <string name="service_tracking">جاري متابعة الطريق</string>
+    <string name="service_locating">مطبات\nجاري تحديد الموقع...</string>
+    <string name="no_nearby">مطبات\nلا توجد بلاغات قريبة</string>
+    <string name="enable_gps">مطبات\nفعّل GPS للحصول على التنبيهات</string>
+    <string name="camera_reported">رادار مُبلّغ عنه</string>
+    <string name="bump_reported">مطب مُبلّغ عنه</string>
+    <string name="pothole_reported">حفرة مُبلّغ عنها</string>
+    <string name="alert_distance">%1$s على بعد %2$d متر</string>
+    <string name="notification_channel">تنبيهات مطبات للطريق</string>
+</resources>
