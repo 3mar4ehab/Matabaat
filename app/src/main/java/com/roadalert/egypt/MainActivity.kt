@@ -137,7 +137,17 @@ class MainActivity : Activity() {
 
     private fun refreshRoadData(force: Boolean) {
         Toast.makeText(this, R.string.osm_import_started, Toast.LENGTH_SHORT).show()
-        OsmHazardImporter(this).importIfDue(force) { count, success ->
+        val locationManager = getSystemService(LOCATION_SERVICE) as android.location.LocationManager
+        val location = runCatching {
+            locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+                ?: locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+        }.getOrNull()
+        if (location == null) {
+            if (force) Toast.makeText(this, R.string.gps_wait, Toast.LENGTH_LONG).show()
+            return
+        }
+        Toast.makeText(this, R.string.osm_import_started, Toast.LENGTH_SHORT).show()
+        OsmHazardImporter(this).importForLocation(location.latitude, location.longitude, force) { count, success ->
             runOnUiThread {
                 if (count > 0) Toast.makeText(this, getString(R.string.osm_import_done, count), Toast.LENGTH_LONG).show()
                 if (success) Toast.makeText(this, R.string.osm_import_finished, Toast.LENGTH_SHORT).show()
