@@ -51,84 +51,63 @@ class MainActivity : Activity() {
     private fun buildDashboard() {
         val navy = Color.rgb(12, 27, 54)
         val yellow = Color.rgb(255, 193, 7)
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(244, 247, 251))
-            setPadding(dp(18), dp(14), dp(18), dp(18))
-        }
-        val scroll = ScrollView(this).apply { addView(root) }
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            setPadding(dp(16), dp(12), dp(16), dp(12))
-            setBackgroundColor(navy)
-        }
-        val logo = ImageView(this).apply {
-            setImageResource(R.drawable.matabaat_logo)
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(68), dp(68))
-        }
-        header.addView(logo)
-        val brand = TextView(this).apply {
-            text = "مطبات  |  Matabaat"; textSize = 23f; setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER; setTypeface(null, android.graphics.Typeface.BOLD)
-        }
-        header.addView(brand)
-        val sub = TextView(this).apply {
-            text = "تنبيهات الطريق ومشاركة المخاطر"; textSize = 14f
-            setTextColor(Color.LTGRAY); gravity = Gravity.CENTER
-            setPadding(0, dp(6), 0, dp(4))
-        }
-        header.addView(sub)
-        root.addView(header, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
+        fun rounded(color: Int) = android.graphics.drawable.GradientDrawable().apply { setColor(color); cornerRadius = dp(18).toFloat() }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(243, 246, 250)) }
+        val scroll = ScrollView(this)
+        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(16)) }
+        scroll.addView(content); root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(16), dp(16), dp(16)); background = rounded(navy) }
+        header.addView(ImageView(this).apply { setImageResource(R.drawable.matabaat_logo); scaleType = ImageView.ScaleType.FIT_CENTER }, LinearLayout.LayoutParams(dp(64), dp(64)))
+        val welcome = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+        welcome.addView(TextView(this).apply { text = "أهلاً بيك في مطبات"; textSize = 20f; setTextColor(Color.WHITE); setTypeface(null, android.graphics.Typeface.BOLD) })
+        welcome.addView(TextView(this).apply { text = "خليك عارف الطريق قبل ما توصله"; textSize = 12f; setTextColor(0xFFDCE5F2.toInt()) })
+        header.addView(welcome); content.addView(header, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(18) })
+
+        content.addView(TextView(this).apply { text = "المخاطر المسجلة"; textSize = 19f; setTextColor(navy); setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 0, 0, dp(8)) })
         val all = store.all()
-        val counts = listOf(
-            Triple("🚨", "رادارات", HazardType.SPEED_CAMERA),
-            Triple("🟡", "مطبات", HazardType.SPEED_BUMP),
-            Triple("🕳️", "حفر", HazardType.POTHOLE)
-        )
-        val countRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        counts.forEach { item ->
-            val count = all.count { it.type == item.third }
-            val card = TextView(this).apply {
-                text = "${item.first}\n$count\n${item.second}\nاضغط للخريطة"
-                gravity = Gravity.CENTER; textSize = 15f; setTextColor(navy)
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setPadding(dp(4), dp(16), dp(4), dp(16))
-                setBackgroundColor(Color.WHITE); isClickable = true
-                setOnClickListener { openHazardMap(item.third) }
+        val cards = listOf(Triple("🚨", "رادارات", HazardType.SPEED_CAMERA), Triple("🟡", "مطبات", HazardType.SPEED_BUMP), Triple("🕳️", "حفر", HazardType.POTHOLE))
+        cards.chunked(2).forEach { group ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            group.forEach { (emoji, label, type) ->
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(8), dp(12), dp(8), dp(12))
+                    background = rounded(Color.WHITE); elevation = dp(2).toFloat(); isClickable = true
+                    setOnClickListener { openHazardMap(type) }
+                }
+                card.addView(TextView(this).apply { text = emoji; textSize = 23f })
+                card.addView(TextView(this).apply { text = all.count { it.type == type }.toString(); textSize = 26f; setTextColor(navy); setTypeface(null, android.graphics.Typeface.BOLD) })
+                card.addView(TextView(this).apply { text = label; textSize = 14f; setTextColor(0xFF526176.toInt()) })
+                row.addView(card, LinearLayout.LayoutParams(0, dp(116), 1f).apply { marginEnd = dp(8); bottomMargin = dp(8) })
             }
-            countRow.addView(card, LinearLayout.LayoutParams(0, dp(112), 1f).apply {
-                marginEnd = dp(6)
-            })
+            if (group.size == 1) row.addView(LinearLayout(this), LinearLayout.LayoutParams(0, 1, 1f))
+            content.addView(row)
         }
-        root.addView(countRow)
-        val sync = TextView(this).apply {
-            text = if (cloudReady) "● متصل بالمزامنة السحابية" else "● المزامنة السحابية معلّقة"
-            setTextColor(if (cloudReady) Color.rgb(28, 130, 78) else Color.DKGRAY)
-            textSize = 13f; setPadding(dp(4), dp(12), dp(4), dp(8))
-        }
-        root.addView(sync)
-        root.addView(sectionTitle("الإبلاغ عن خطر"))
-        root.addView(primaryButton("＋ بلاغ جديد") { showQuickReport() }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
-        root.addView(sectionTitle("الخريطة والتنبيهات"))
-        root.addView(actionButton("عرض كل المخاطر على الخريطة") { openHazardMap(null) })
-        root.addView(actionButton("إدارة بيانات المحافظات") { startActivity(Intent(this, RegionManagerActivity::class.java)) })
-        root.addView(actionButton("لوحة تحكم الأدمن") { startActivity(Intent(this, AdminLoginActivity::class.java)) })
-        root.addView(actionButton("أصوات التنبيه") { startActivity(Intent(this, AlertSettingsActivity::class.java)) })
-        root.addView(actionButton("تشغيل التنبيهات") { startAlerts() })
-        root.addView(actionButton("إيقاف التنبيهات") {
-            stopService(Intent(this, AlertService::class.java))
-            Toast.makeText(this, "تم إيقاف التنبيهات", Toast.LENGTH_SHORT).show()
+        content.addView(TextView(this).apply {
+            text = if (cloudReady) "● المزامنة السحابية متصلة" else "● المزامنة السحابية غير متاحة"
+            textSize = 12f; setTextColor(if (cloudReady) 0xFF16834A.toInt() else 0xFF9A6700.toInt()); setPadding(0, dp(8), 0, dp(8))
         })
-        root.addView(actionButton("تفعيل النافذة العائمة") { enableOverlay() })
-        root.addView(actionButton("تحديث بيانات الطريق حولي") { refreshRoadData(true) })
-        val attribution = TextView(this).apply {
-            text = getString(R.string.osm_attribution); textSize = 11f
-            setTextColor(Color.GRAY); setPadding(0, dp(14), 0, 0)
+        content.addView(primaryButton("＋ بلاغ جديد") { showQuickReport() }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(12) })
+        content.addView(sectionTitle("الخدمات"))
+        root.addView(scroll)
+        content.addView(actionButton("فتح الخريطة الحديثة") { openHazardMap(null) })
+        content.addView(actionButton("تشغيل التنبيهات أثناء القيادة") { startAlerts() })
+        content.addView(actionButton("أصوات التنبيه لكل نوع خطر") { startActivity(Intent(this, AlertSettingsActivity::class.java)) })
+        content.addView(actionButton("إدارة بيانات المحافظات") { startActivity(Intent(this, RegionManagerActivity::class.java)) })
+        content.addView(actionButton("لوحة تحكم الأدمن") { startActivity(Intent(this, AdminLoginActivity::class.java)) })
+        content.addView(actionButton("إيقاف التنبيهات") { stopService(Intent(this, AlertService::class.java)) })
+        content.addView(actionButton("تحديث بيانات الطريق حولي") { refreshRoadData(true) })
+        content.addView(TextView(this).apply { text = getString(R.string.osm_attribution); textSize = 10f; setTextColor(Color.GRAY); setPadding(0, dp(12), 0, 0) })
+
+        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(Color.WHITE) }
+        listOf("الرئيسية", "الخريطة", "بلاغ", "الأصوات").forEachIndexed { index, label ->
+            nav.addView(Button(this).apply {
+                text = label; isAllCaps = false; textSize = 12f
+                setOnClickListener { when (index) { 1 -> openHazardMap(null); 2 -> showQuickReport(); 3 -> startActivity(Intent(this@MainActivity, AlertSettingsActivity::class.java)) } }
+            }, LinearLayout.LayoutParams(0, dp(48), 1f))
         }
-        root.addView(attribution)
-        setContentView(scroll)
+        root.addView(nav)
+        setContentView(root)
     }
 
     private fun sectionTitle(text: String) = TextView(this).apply {
