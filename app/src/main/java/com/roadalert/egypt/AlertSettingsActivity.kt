@@ -26,6 +26,17 @@ object AlertSounds {
     fun defaultFor(type: HazardType) = when(type) { HazardType.SPEED_CAMERA -> 0; HazardType.SPEED_BUMP -> 1; HazardType.POTHOLE -> 2 }
 }
 
+object AlertDistances {
+    const val PREFS = "matabaat_alert_distances"
+    fun defaultFor(type: HazardType) = when (type) {
+        HazardType.SPEED_CAMERA -> 500
+        HazardType.SPEED_BUMP -> 250
+        HazardType.POTHOLE -> 150
+    }
+    fun get(context: Context, type: HazardType): Int =
+        context.getSharedPreferences(PREFS, 0).getInt(type.name, defaultFor(type)).coerceIn(50, 1000)
+}
+
 class AlertSettingsActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +53,22 @@ class AlertSettingsActivity : Activity() {
             row.addView(spinner, LinearLayout.LayoutParams(0, -2, 1f))
             row.addView(Button(this).apply { text = "تجربة"; isAllCaps = false; setOnClickListener { AlertSounds.play(this@AlertSettingsActivity, type, spinner.selectedItemPosition) } })
             row.addView(Button(this).apply { text = "حفظ"; isAllCaps = false; setOnClickListener { prefs.edit().putInt(type.name, spinner.selectedItemPosition).apply(); Toast.makeText(this@AlertSettingsActivity, "تم حفظ صوت $label", Toast.LENGTH_SHORT).show() } })
+            root.addView(row)
+        }
+        root.addView(TextView(this).apply { text = "مسافة بدء التنبيه"; textSize = 20f; setTextColor(0xFF0C1B36.toInt()); setTypeface(null, android.graphics.Typeface.BOLD); setPadding(0, 24, 0, 8) })
+        root.addView(TextView(this).apply { text = "حدد من كام متر يبدأ الصوت لكل نوع خطر. القيم المقترحة: الرادار 500م، المطب 250م، الحفرة 150م."; textSize = 14f; setTextColor(0xFF596579.toInt()) })
+        listOf(HazardType.SPEED_CAMERA to "الرادارات", HazardType.SPEED_BUMP to "المطبات", HazardType.POTHOLE to "الحفر").forEach { (type, label) ->
+            root.addView(TextView(this).apply { text = label; textSize = 17f; setTextColor(0xFF0C1B36.toInt()); setPadding(0, 12, 0, 4) })
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+            val values = (50..1000 step 50).toList()
+            val spinner = Spinner(this)
+            spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, values.map { "$it متر" })
+            spinner.setSelection(values.indexOf(AlertDistances.get(this@AlertSettingsActivity, type)).coerceAtLeast(0))
+            row.addView(spinner, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(Button(this).apply { text = "حفظ"; isAllCaps = false; setOnClickListener {
+                getSharedPreferences(AlertDistances.PREFS, 0).edit().putInt(type.name, values[spinner.selectedItemPosition]).apply()
+                Toast.makeText(this@AlertSettingsActivity, "تم حفظ مسافة $label", Toast.LENGTH_SHORT).show()
+            } })
             root.addView(row)
         }
         setContentView(ScrollView(this).apply { addView(root) })
