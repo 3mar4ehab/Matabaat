@@ -59,7 +59,8 @@ class HazardMapActivity : Activity(), MapEventsReceiver {
             if (current != null) map.controller.setCenter(GeoPoint(current.latitude, current.longitude))
         } else {
             val type = runCatching { HazardType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "") }.getOrNull()
-            val hazards = HazardStore(this).all().filter { type == null || it.type == type }
+            val regionId = intent.getStringExtra(EXTRA_REGION_ID)
+            val hazards = HazardStore(this).all().filter { (type == null || it.type == type) && (regionId.isNullOrBlank() || it.regionId == regionId) }
             hazards.forEach { h ->
                 val marker = Marker(map).apply {
                     position = GeoPoint(h.latitude, h.longitude)
@@ -108,6 +109,7 @@ class HazardMapActivity : Activity(), MapEventsReceiver {
 
     companion object {
         const val EXTRA_TYPE = "hazard_type"
+        const val EXTRA_REGION_ID = "region_id"
         const val EXTRA_PICK_LOCATION = "pick_location"
         const val EXTRA_LAT = "picked_latitude"
         const val EXTRA_LON = "picked_longitude"
