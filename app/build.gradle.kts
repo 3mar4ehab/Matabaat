@@ -14,8 +14,8 @@ android {
         applicationId = "com.roadalert.egypt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "0.10"
+        versionCode = 11
+        versionName = "0.11"
     }
     signingConfigs {
         if (!signingStore.isNullOrBlank()) create("stableRelease") {
@@ -40,4 +40,5 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
+    implementation("org.maplibre.gl:android-sdk:13.6.1")
 }
