@@ -12,6 +12,9 @@
         android:label="@string/app_name" android:theme="@style/AppTheme" android:usesCleartextTraffic="false">
         <activity android:name=".HazardMapActivity" android:exported="false" />
         <activity android:name=".RegionManagerActivity" android:exported="false" />
+        <activity android:name=".AdminLoginActivity" android:exported="false" />
+        <activity android:name=".AdminActivity" android:exported="false" />
+        <activity android:name=".AlertSettingsActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
