@@ -88,6 +88,29 @@ class MainActivity : Activity() {
             textSize = 12f; setTextColor(if (cloudReady) 0xFF16834A.toInt() else 0xFF9A6700.toInt()); setPadding(0, dp(8), 0, dp(8))
         })
         content.addView(primaryButton("＋ بلاغ جديد") { showQuickReport() }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(12) })
+        content.addView(sectionTitle("إلى أين تريد الذهاب؟"))
+        val destination = EditText(this).apply {
+            hint = "اكتب اسم المكان أو العنوان"
+            setSingleLine(true)
+            textSize = 16f
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            setBackground(rounded(Color.WHITE))
+        }
+        content.addView(destination, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
+        content.addView(primaryButton("ابدأ الملاحة إلى الوجهة") {
+            val query = destination.text.toString().trim()
+            if (query.isBlank()) {
+                destination.error = "اكتب الوجهة أولاً"
+            } else {
+                val uri = Uri.parse("google.navigation:q=" + Uri.encode(query) + "&mode=d")
+                val navIntent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
+                try { startActivity(navIntent) }
+                catch (_: Exception) {
+                    val webUri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=" + Uri.encode(query) + "&travelmode=driving")
+                    startActivity(Intent(Intent.ACTION_VIEW, webUri))
+                }
+            }
+        }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(12) })
         content.addView(sectionTitle("الخدمات"))
         content.addView(actionButton("فتح الخريطة الحديثة") { openHazardMap(null) })
         content.addView(actionButton("تشغيل التنبيهات أثناء القيادة") { startAlerts() })
