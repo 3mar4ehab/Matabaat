@@ -1,6 +1,6 @@
 package com.roadalert.egypt
 
-import android.app.Activity
+import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Bundle
@@ -13,8 +13,8 @@ object AlertSounds {
     const val PREFS = "matabaat_alert_sounds"
     private val names = listOf("نبضة واحدة", "نبضتان", "ثلاث نبضات")
     fun label(index: Int) = names[index.coerceIn(0, 2)]
-    fun play(activity: Activity, type: HazardType, previewIndex: Int? = null) {
-        val prefs = activity.getSharedPreferences(PREFS, 0)
+    fun play(context: Context, type: HazardType, previewIndex: Int? = null) {
+        val prefs = context.getSharedPreferences(PREFS, 0)
         val index = previewIndex ?: prefs.getInt(type.name, defaultFor(type))
         val generator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 90)
         val handler = Handler(Looper.getMainLooper())
