@@ -38,15 +38,14 @@ class HazardCloudSync(context: Context) {
                     Log.e("MatabaatCloud", "Community hazard listener failed", error)
                     return@addSnapshotListener
                 }
-                snapshot?.documents?.forEach { doc ->
-                    val lat = doc.getDouble("latitude") ?: return@forEach
-                    val lon = doc.getDouble("longitude") ?: return@forEach
-                    val type = runCatching { HazardType.valueOf(doc.getString("type") ?: "") }.getOrNull() ?: return@forEach
-                    val createdAt = doc.getLong("createdAt") ?: 0L
-                    if (lat in -90.0..90.0 && lon in -180.0..180.0) {
-                        store.addIfMissing(Hazard(lat, lon, type, createdAt, HazardSource.FIRESTORE, doc.id))
-                    }
-                }
+                val reports = snapshot?.documents?.mapNotNull { doc ->
+                    val lat = doc.getDouble("latitude") ?: return@mapNotNull null
+                    val lon = doc.getDouble("longitude") ?: return@mapNotNull null
+                    val type = runCatching { HazardType.valueOf(doc.getString("type") ?: "") }.getOrNull() ?: return@mapNotNull null
+                    if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return@mapNotNull null
+                    Hazard(lat, lon, type, doc.getLong("createdAt") ?: 0L, HazardSource.FIRESTORE, doc.id)
+                } ?: emptyList()
+                store.replaceCloudReports(reports)
             }
         }
     }
@@ -144,7 +143,7 @@ class HazardCloudSync(context: Context) {
                 "ownerUid" to (auth.currentUser?.uid ?: "")
             )
             db.collection("hazards").add(data)
-                .addOnSuccessListener { onComplete?.invoke(true) }
+                .addOnSuccessListener { ref -> store.markSynced(hazard, ref.id); onComplete?.invoke(true) }
                 .addOnFailureListener { error ->
                     Log.e("MatabaatCloud", "Could not upload community report", error)
                     onComplete?.invoke(false)
