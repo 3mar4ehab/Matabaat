@@ -1,50 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    match /hazards/{hazardId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['latitude', 'longitude', 'type', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['latitude', 'longitude', 'type', 'createdAt'])
-        && request.resource.data.latitude is number
-        && request.resource.data.latitude >= -90
-        && request.resource.data.latitude <= 90
-        && request.resource.data.longitude is number
-        && request.resource.data.longitude >= -180
-        && request.resource.data.longitude <= 180
-        && request.resource.data.type in ['SPEED_CAMERA', 'SPEED_BUMP', 'POTHOLE']
-        && request.resource.data.createdAt is int
-        && request.resource.data.createdAt > 0;
-      allow update, delete: if false;
-    }
-
-    match /external_hazards/{hazardId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['latitude', 'longitude', 'type', 'source', 'sourceId', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['latitude', 'longitude', 'type', 'source', 'sourceId', 'createdAt'])
-        && request.resource.data.latitude is number
-        && request.resource.data.latitude >= 22
-        && request.resource.data.latitude <= 32
-        && request.resource.data.longitude is number
-        && request.resource.data.longitude >= 24
-        && request.resource.data.longitude <= 37
-        && request.resource.data.type in ['SPEED_CAMERA', 'SPEED_BUMP']
-        && request.resource.data.source == 'OPENSTREETMAP'
-        && request.resource.data.sourceId is string
-        && request.resource.data.sourceId == hazardId
-        && hazardId.matches('^(node|way|relation)_[0-9]+$')
-        && request.resource.data.createdAt is int
-        && request.resource.data.createdAt > 0;
-      allow update: if request.auth != null
-        && resource.data.source == 'OPENSTREETMAP'
-        && request.resource.data.latitude == resource.data.latitude
-        && request.resource.data.longitude == resource.data.longitude
-        && request.resource.data.type == resource.data.type
-        && request.resource.data.source == resource.data.source
-        && request.resource.data.sourceId == resource.data.sourceId
-        && request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if false;
-    }
+ match /databases/{database}/documents {
+  function signedIn(){return request.auth != null;}
+  function isAdmin(){return signedIn() && request.auth.token.email == 'oshehab007@gmail.com' && request.auth.token.email_verified == true;}
+  function validHazard(d){return d.latitude is number && d.latitude>=-90 && d.latitude<=90 && d.longitude is number && d.longitude>=-180 && d.longitude<=180 && d.type in ['SPEED_CAMERA','SPEED_BUMP','POTHOLE'] && d.createdAt is int && d.createdAt>0;}
+  match /hazards/{id}{
+   allow read: if signedIn();
+   allow create: if signedIn() && request.resource.data.keys().hasAll(['latitude','longitude','type','createdAt']) && request.resource.data.keys().hasOnly(['latitude','longitude','type','createdAt','ownerUid','adminEdited']) && validHazard(request.resource.data) && (isAdmin() || request.resource.data.ownerUid==request.auth.uid);
+   allow update,delete: if isAdmin();
   }
+  match /external_hazards/{id}{
+   allow read: if signedIn();
+   allow create: if signedIn() && request.resource.data.keys().hasAll(['latitude','longitude','type','source','sourceId','createdAt']) && request.resource.data.keys().hasOnly(['latitude','longitude','type','source','sourceId','createdAt']) && request.resource.data.latitude is number && request.resource.data.latitude>=22 && request.resource.data.latitude<=32 && request.resource.data.longitude is number && request.resource.data.longitude>=24 && request.resource.data.longitude<=37 && request.resource.data.type in ['SPEED_CAMERA','SPEED_BUMP'] && request.resource.data.source=='OPENSTREETMAP' && request.resource.data.sourceId==id && id.matches('^(node|way|relation)_[0-9]+$') && request.resource.data.createdAt is int && request.resource.data.createdAt>0;
+   allow update: if isAdmin() || (signedIn() && resource.data.source=='OPENSTREETMAP' && request.resource.data.latitude==resource.data.latitude && request.resource.data.longitude==resource.data.longitude && request.resource.data.type==resource.data.type && request.resource.data.source==resource.data.source && request.resource.data.sourceId==resource.data.sourceId && request.resource.data.createdAt==resource.data.createdAt);
+   allow delete: if isAdmin();
+  }
+ }
 }
