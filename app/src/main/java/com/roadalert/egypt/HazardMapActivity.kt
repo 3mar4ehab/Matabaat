@@ -3,6 +3,8 @@ import android.app.Activity
 import android.os.Bundle
 import android.content.Intent
 import android.graphics.Color
+import android.location.LocationManager
+import android.app.AlertDialog
 import android.view.Gravity
 import android.widget.*
 import org.maplibre.android.MapLibre
@@ -37,7 +39,25 @@ class HazardMapActivity:Activity(){
  val type=runCatching{HazardType.valueOf(intent.getStringExtra(EXTRA_TYPE)?:"")}.getOrNull();val region=intent.getStringExtra(EXTRA_REGION_ID)
  val hs=HazardStore(this).all().filter{(type==null||it.type==type)&&(region.isNullOrBlank()||it.regionId==region)}
  HazardType.values().forEach{t->val fs=hs.filter{it.type==t}.map{Feature.fromGeometry(Point.fromLngLat(it.longitude,it.latitude))};val sid="h-${t.name.lowercase()}";style.addSource(GeoJsonSource(sid,FeatureCollection.fromFeatures(fs)));val color=when(t){HazardType.SPEED_CAMERA->"#EF4444";HazardType.SPEED_BUMP->"#F59E0B";HazardType.POTHOLE->"#7C3AED"};style.addLayer(CircleLayer("$sid-layer",sid).withProperties(PropertyFactory.circleRadius(7f),PropertyFactory.circleColor(color),PropertyFactory.circleStrokeColor("#FFFFFF"),PropertyFactory.circleStrokeWidth(2f)))}
- title.text="المخاطر المسجلة • ${hs.size}";if(hs.isNotEmpty())m.cameraPosition=CameraPosition.Builder().target(LatLng(hs[0].latitude,hs[0].longitude)).zoom(12.0).build()
+ title.text="المخاطر المسجلة • ${hs.size}";val lm=getSystemService(LOCATION_SERVICE) as LocationManager
+ val current=runCatching{lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?:lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)}.getOrNull()
+ if(current!=null){
+   val userSource=GeoJsonSource("current-user",Feature.fromGeometry(Point.fromLngLat(current.longitude,current.latitude)))
+   style.addSource(userSource)
+   style.addLayer(CircleLayer("current-user-layer","current-user").withProperties(PropertyFactory.circleRadius(9f),PropertyFactory.circleColor("#2563EB"),PropertyFactory.circleStrokeColor("#FFFFFF"),PropertyFactory.circleStrokeWidth(3f)))
+   m.cameraPosition=CameraPosition.Builder().target(LatLng(current.latitude,current.longitude)).zoom(14.0).build()
+ } else if(hs.isNotEmpty()) m.cameraPosition=CameraPosition.Builder().target(LatLng(hs[0].latitude,hs[0].longitude)).zoom(12.0).build()
+ m.addOnMapClickListener { tapped ->
+   val closest=hs.map { it to Geo.distanceMeters(tapped.latitude,tapped.longitude,it.latitude,it.longitude) }.filter { it.second<100f }.minByOrNull { it.second }
+   if(closest!=null){
+     val (hazard,meters)=closest
+     val label=when(hazard.type){HazardType.SPEED_CAMERA->"رادار";HazardType.SPEED_BUMP->"مطب";HazardType.POTHOLE->"حفرة"}
+     val source=when(hazard.source){HazardSource.USER->"بلاغ مستخدم";HazardSource.FIRESTORE->"بلاغ مجتمعي";HazardSource.OPENSTREETMAP->"بيانات OpenStreetMap"}
+     AlertDialog.Builder(this).setTitle(label).setMessage("$source\\nالمسافة من النقطة: ${meters.toInt()} متر\\nالإحداثيات: %.5f, %.5f".format(hazard.latitude,hazard.longitude))
+       .setPositiveButton("حسنًا",null).show()
+   }
+   true
+ }
  }
  }}
  }
