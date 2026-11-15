@@ -1,5 +1,6 @@
 package com.roadalert.egypt
 
+import android.app.Activity
 import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
