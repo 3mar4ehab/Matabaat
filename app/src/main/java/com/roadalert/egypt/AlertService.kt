@@ -107,7 +107,7 @@ class AlertService : Service(), LocationListener {
         val meters = distance.toInt()
         showBubble(getString(R.string.alert_distance, label, meters))
         val key = "${hazard.type}:${hazard.latitude}:${hazard.longitude}"
-        if (distance <= 350f && (key != lastAlertKey || System.currentTimeMillis() - lastAlertAt > 45000L)) {
+        if (distance <= AlertDistances.get(this, hazard.type).toFloat() && (key != lastAlertKey || System.currentTimeMillis() - lastAlertAt > 45000L)) {
             lastAlertKey = key; lastAlertAt = System.currentTimeMillis()
             runCatching { AlertSounds.play(this, hazard.type) }
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(44, notification(getString(R.string.alert_distance, label, meters)))
