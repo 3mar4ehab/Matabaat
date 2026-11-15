@@ -65,7 +65,7 @@ class MainActivity : Activity() {
         val logo = ImageView(this).apply {
             setImageResource(R.drawable.ic_matabaat)
             scaleType = ImageView.ScaleType.FIT_CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(170), dp(160))
+            layoutParams = LinearLayout.LayoutParams(dp(82), dp(82))
         }
         header.addView(logo)
         val brand = TextView(this).apply {
@@ -113,6 +113,7 @@ class MainActivity : Activity() {
         root.addView(primaryButton("＋ بلاغ جديد") { showQuickReport() }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(8) })
         root.addView(sectionTitle("الخريطة والتنبيهات"))
         root.addView(actionButton("عرض كل المخاطر على الخريطة") { openHazardMap(null) })
+        root.addView(actionButton("إدارة بيانات المحافظات") { startActivity(Intent(this, RegionManagerActivity::class.java)) })
         root.addView(actionButton("تشغيل التنبيهات") { startAlerts() })
         root.addView(actionButton("إيقاف التنبيهات") {
             stopService(Intent(this, AlertService::class.java))
