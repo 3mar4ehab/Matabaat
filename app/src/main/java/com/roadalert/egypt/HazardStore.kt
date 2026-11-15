@@ -46,6 +46,28 @@ class HazardStore(context: Context) {
     }
 
     fun forRegion(regionId: String): List<Hazard> = all().filter { it.regionId == regionId }
+    @Synchronized
+    fun markSynced(hazard: Hazard, documentId: String) {
+        val current = all().filterNot {
+            it.source == HazardSource.USER && it.type == hazard.type &&
+                kotlin.math.abs(it.latitude - hazard.latitude) < 0.00001 &&
+                kotlin.math.abs(it.longitude - hazard.longitude) < 0.00001
+        }
+        save((current + hazard.copy(source = HazardSource.FIRESTORE, sourceId = documentId)).takeLast(20000))
+    }
+
+    @Synchronized
+    fun replaceCloudReports(reports: List<Hazard>) {
+        val existing = all().filterNot { it.source == HazardSource.FIRESTORE }
+        val cleaned = existing.filterNot { local ->
+            local.source == HazardSource.USER && reports.any { remote ->
+                remote.type == local.type &&
+                    kotlin.math.abs(remote.latitude - local.latitude) < 0.00001 &&
+                    kotlin.math.abs(remote.longitude - local.longitude) < 0.00001
+            }
+        }
+        save((cleaned + reports).takeLast(20000))
+    }
 
     private fun save(hazards: List<Hazard>) {
         val array = JSONArray()
