@@ -63,9 +63,9 @@ class MainActivity : Activity() {
             setBackgroundColor(navy)
         }
         val logo = ImageView(this).apply {
-            setImageResource(R.drawable.ic_matabaat)
+            setImageResource(R.drawable.matabaat_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(82), dp(82))
+            layoutParams = LinearLayout.LayoutParams(dp(68), dp(68))
         }
         header.addView(logo)
         val brand = TextView(this).apply {
