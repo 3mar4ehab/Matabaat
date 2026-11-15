@@ -13,9 +13,9 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
-import com.mapbox.geojson.Point
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.FeatureCollection
+import org.maplibre.geojson.Point
 class HazardMapActivity:Activity(){
  private lateinit var view:MapView
  private var chosen:LatLng?=null
