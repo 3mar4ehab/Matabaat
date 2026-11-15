@@ -109,7 +109,7 @@ class AlertService : Service(), LocationListener {
         val key = "${hazard.type}:${hazard.latitude}:${hazard.longitude}"
         if (distance <= 350f && (key != lastAlertKey || System.currentTimeMillis() - lastAlertAt > 45000L)) {
             lastAlertKey = key; lastAlertAt = System.currentTimeMillis()
-            runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85).startTone(ToneGenerator.TONE_PROP_BEEP, 500) }
+            runCatching { AlertSounds.play(this, hazard.type) }
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(44, notification(getString(R.string.alert_distance, label, meters)))
         }
     }
