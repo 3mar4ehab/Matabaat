@@ -89,7 +89,6 @@ class MainActivity : Activity() {
         })
         content.addView(primaryButton("＋ بلاغ جديد") { showQuickReport() }, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(12) })
         content.addView(sectionTitle("الخدمات"))
-        root.addView(scroll)
         content.addView(actionButton("فتح الخريطة الحديثة") { openHazardMap(null) })
         content.addView(actionButton("تشغيل التنبيهات أثناء القيادة") { startAlerts() })
         content.addView(actionButton("أصوات التنبيه لكل نوع خطر") { startActivity(Intent(this, AlertSettingsActivity::class.java)) })
