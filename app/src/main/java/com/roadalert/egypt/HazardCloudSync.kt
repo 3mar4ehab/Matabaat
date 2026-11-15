@@ -140,7 +140,8 @@ class HazardCloudSync(context: Context) {
             if (!signedIn) { onComplete?.invoke(false); return@start }
             val data = hashMapOf(
                 "latitude" to hazard.latitude, "longitude" to hazard.longitude,
-                "type" to hazard.type.name, "createdAt" to hazard.createdAt
+                "type" to hazard.type.name, "createdAt" to hazard.createdAt,
+                "ownerUid" to (auth.currentUser?.uid ?: "")
             )
             db.collection("hazards").add(data)
                 .addOnSuccessListener { onComplete?.invoke(true) }
