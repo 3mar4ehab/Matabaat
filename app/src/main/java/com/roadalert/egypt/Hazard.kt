@@ -9,5 +9,6 @@ data class Hazard(
     val type: HazardType,
     val createdAt: Long = System.currentTimeMillis(),
     val source: HazardSource = HazardSource.USER,
-    val sourceId: String = ""
+    val sourceId: String = "",
+    val regionId: String = ""
 )
