@@ -1,117 +1,46 @@
 package com.roadalert.egypt
-
 import android.app.Activity
 import android.os.Bundle
 import android.content.Intent
 import android.graphics.Color
 import android.view.Gravity
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
-import org.osmdroid.events.MapEventsReceiver
-import org.osmdroid.views.overlay.MapEventsOverlay
-
-class HazardMapActivity : Activity(), MapEventsReceiver {
-    private lateinit var map: MapView
-    private var selected: GeoPoint? = null
-    private var picking = false
-    private var selectedMarker: Marker? = null
-    private var confirmButton: Button? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        Configuration.getInstance().userAgentValue = packageName
-        picking = intent.getBooleanExtra(EXTRA_PICK_LOCATION, false)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.WHITE) }
-        val title = TextView(this).apply {
-            text = if (picking) "حدد مكان الخطر بالضغط على الخريطة" else "خريطة مواقع المخاطر"
-            textSize = 17f; setTextColor(Color.rgb(12,27,54)); gravity = Gravity.CENTER
-            setPadding(12, 18, 12, 18)
-        }
-        root.addView(title)
-        map = MapView(this).apply {
-            setTileSource(TileSourceFactory.MAPNIK); setMultiTouchControls(true)
-            controller.setZoom(6.0); controller.setCenter(GeoPoint(26.8, 30.8))
-        }
-        map.overlays.add(MapEventsOverlay(this))
-        root.addView(map, LinearLayout.LayoutParams(-1, 0, 1f))
-        if (picking) {
-            confirmButton = Button(this).apply {
-                text = "تأكيد مكان البلاغ"; isAllCaps = false; isEnabled = false
-                setOnClickListener {
-                    val p = selected ?: return@setOnClickListener
-                    setResult(RESULT_OK, Intent().putExtra(EXTRA_LAT, p.latitude).putExtra(EXTRA_LON, p.longitude))
-                    finish()
-                }
-            }
-            root.addView(confirmButton, LinearLayout.LayoutParams(-1, -2))
-            val lm = getSystemService(LOCATION_SERVICE) as android.location.LocationManager
-            val current = runCatching {
-                lm.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-                    ?: lm.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-            }.getOrNull()
-            if (current != null) map.controller.setCenter(GeoPoint(current.latitude, current.longitude))
-        } else {
-            val type = runCatching { HazardType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "") }.getOrNull()
-            val regionId = intent.getStringExtra(EXTRA_REGION_ID)
-            val hazards = HazardStore(this).all().filter { (type == null || it.type == type) && (regionId.isNullOrBlank() || it.regionId == regionId) }
-            hazards.forEach { h ->
-                val marker = Marker(map).apply {
-                    position = GeoPoint(h.latitude, h.longitude)
-                    setTitle(when (h.type) {
-                        HazardType.SPEED_CAMERA -> "رادار"
-                        HazardType.SPEED_BUMP -> "مطب"
-                        HazardType.POTHOLE -> "حفرة"
-                    })
-                    snippet = "الموقع: %.5f, %.5f".format(h.latitude, h.longitude)
-                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                }
-                map.overlays.add(marker)
-            }
-            if (hazards.isNotEmpty()) {
-                map.controller.setZoom(12.0)
-                map.controller.setCenter(GeoPoint(hazards.first().latitude, hazards.first().longitude))
-            }
-            title.text = (when (type) {
-                HazardType.SPEED_CAMERA -> "مواقع الرادارات"
-                HazardType.SPEED_BUMP -> "مواقع المطبات"
-                HazardType.POTHOLE -> "مواقع الحفر"
-                else -> "كل مواقع المخاطر"
-            }) + " • ${hazards.size}"
-            if (hazards.isEmpty()) Toast.makeText(this, "لا توجد بلاغات محفوظة من هذا النوع حتى الآن", Toast.LENGTH_LONG).show()
-        }
-        setContentView(root)
-    }
-
-    override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
-        if (picking && p != null) {
-            selected = p
-            selectedMarker?.let { map.overlays.remove(it) }
-            selectedMarker = Marker(map).apply {
-                position = p; title = "موقع البلاغ المحدد"
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            }
-            map.overlays.add(selectedMarker)
-            confirmButton?.isEnabled = true
-            map.invalidate()
-        }
-        return true
-    }
-    override fun longPressHelper(p: GeoPoint?): Boolean = false
-    override fun onResume() { super.onResume(); if (::map.isInitialized) map.onResume() }
-    override fun onPause() { if (::map.isInitialized) map.onPause(); super.onPause() }
-
-    companion object {
-        const val EXTRA_TYPE = "hazard_type"
-        const val EXTRA_REGION_ID = "region_id"
-        const val EXTRA_PICK_LOCATION = "pick_location"
-        const val EXTRA_LAT = "picked_latitude"
-        const val EXTRA_LON = "picked_longitude"
-    }
+import android.widget.*
+import org.maplibre.android.MapLibre
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.sources.GeoJsonSource
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
+import com.mapbox.geojson.Point
+class HazardMapActivity:Activity(){
+ private lateinit var view:MapView
+ private var chosen:LatLng?=null
+ private var marker:GeoJsonSource?=null
+ private var confirm:Button?=null
+ override fun onCreate(s:Bundle?){super.onCreate(s);MapLibre.getInstance(this)
+ val picking=intent.getBooleanExtra(EXTRA_PICK_LOCATION,false)
+ val root=LinearLayout(this).apply{orientation=1;setBackgroundColor(Color.WHITE)}
+ val title=TextView(this).apply{text=if(picking)"حدد مكان البلاغ على الخريطة" else "خريطة المخاطر";textSize=18f;gravity=Gravity.CENTER;setTextColor(0xFF0C1B36.toInt());setPadding(10,14,10,14)}
+ root.addView(title);view=MapView(this);view.onCreate(s);root.addView(view,LinearLayout.LayoutParams(-1,0,1f))
+ if(picking){confirm=Button(this).apply{text="تأكيد المكان";isEnabled=false;setOnClickListener{val p=chosen?:return@setOnClickListener;setResult(RESULT_OK,Intent().putExtra(EXTRA_LAT,p.latitude).putExtra(EXTRA_LON,p.longitude));finish()}};root.addView(confirm)}
+ root.addView(TextView(this).apply{text="© OpenStreetMap contributors";gravity=Gravity.CENTER;textSize=10f;setTextColor(0xFF667085.toInt())});setContentView(root)
+ view.getMapAsync{m->m.setStyle("https://tiles.openfreemap.org/styles/liberty"){style->
+ if(picking){marker=GeoJsonSource("picked",FeatureCollection.fromFeatures(arrayOf()));style.addSource(marker!!);style.addLayer(CircleLayer("picked-layer","picked").withProperties(PropertyFactory.circleRadius(10f),PropertyFactory.circleColor("#FFC107"),PropertyFactory.circleStrokeColor("#0C1B36"),PropertyFactory.circleStrokeWidth(3f)))
+ m.addOnMapClickListener{p->chosen=p;marker?.setGeoJson(Feature.fromGeometry(Point.fromLngLat(p.longitude,p.latitude)));confirm?.isEnabled=true;title.text="%.5f, %.5f".format(p.latitude,p.longitude);true}
+ val lm=getSystemService(LOCATION_SERVICE) as android.location.LocationManager;val l=runCatching{lm.getLastKnownLocation("gps")?:lm.getLastKnownLocation("network")}.getOrNull()
+ m.cameraPosition=if(l!=null)CameraPosition.Builder().target(LatLng(l.latitude,l.longitude)).zoom(15.0).build() else CameraPosition.Builder().target(LatLng(26.8,30.8)).zoom(5.5).build()
+ }else{
+ val type=runCatching{HazardType.valueOf(intent.getStringExtra(EXTRA_TYPE)?:"")}.getOrNull();val region=intent.getStringExtra(EXTRA_REGION_ID)
+ val hs=HazardStore(this).all().filter{(type==null||it.type==type)&&(region.isNullOrBlank()||it.regionId==region)}
+ HazardType.values().forEach{t->val fs=hs.filter{it.type==t}.map{Feature.fromGeometry(Point.fromLngLat(it.longitude,it.latitude))};val sid="h-${t.name.lowercase()}";style.addSource(GeoJsonSource(sid,FeatureCollection.fromFeatures(fs)));val color=when(t){HazardType.SPEED_CAMERA->"#EF4444";HazardType.SPEED_BUMP->"#F59E0B";HazardType.POTHOLE->"#7C3AED"};style.addLayer(CircleLayer("$sid-layer",sid).withProperties(PropertyFactory.circleRadius(7f),PropertyFactory.circleColor(color),PropertyFactory.circleStrokeColor("#FFFFFF"),PropertyFactory.circleStrokeWidth(2f)))}
+ title.text="المخاطر المسجلة • ${hs.size}";if(hs.isNotEmpty())m.cameraPosition=CameraPosition.Builder().target(LatLng(hs[0].latitude,hs[0].longitude)).zoom(12.0).build()
+ }
+ }}
+ }
+ override fun onStart(){super.onStart();view.onStart()};override fun onResume(){super.onResume();view.onResume()};override fun onPause(){view.onPause();super.onPause()};override fun onStop(){view.onStop();super.onStop()};override fun onLowMemory(){super.onLowMemory();view.onLowMemory()};override fun onDestroy(){view.onDestroy();super.onDestroy()};override fun onSaveInstanceState(o:Bundle){super.onSaveInstanceState(o);view.onSaveInstanceState(o)}
+ companion object{const val EXTRA_TYPE="hazard_type";const val EXTRA_REGION_ID="region_id";const val EXTRA_PICK_LOCATION="pick_location";const val EXTRA_LAT="picked_latitude";const val EXTRA_LON="picked_longitude"}
 }
