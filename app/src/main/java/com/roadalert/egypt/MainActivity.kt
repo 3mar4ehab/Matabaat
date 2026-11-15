@@ -114,6 +114,8 @@ class MainActivity : Activity() {
         root.addView(sectionTitle("الخريطة والتنبيهات"))
         root.addView(actionButton("عرض كل المخاطر على الخريطة") { openHazardMap(null) })
         root.addView(actionButton("إدارة بيانات المحافظات") { startActivity(Intent(this, RegionManagerActivity::class.java)) })
+        root.addView(actionButton("لوحة تحكم الأدمن") { startActivity(Intent(this, AdminLoginActivity::class.java)) })
+        root.addView(actionButton("أصوات التنبيه") { startActivity(Intent(this, AlertSettingsActivity::class.java)) })
         root.addView(actionButton("تشغيل التنبيهات") { startAlerts() })
         root.addView(actionButton("إيقاف التنبيهات") {
             stopService(Intent(this, AlertService::class.java))
