@@ -1,4 +1,6 @@
-name: Build Matabaat APK
+name: Matabaat Android APK Build
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
