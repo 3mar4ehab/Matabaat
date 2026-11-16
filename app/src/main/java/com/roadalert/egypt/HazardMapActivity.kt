@@ -241,13 +241,7 @@ class HazardMapActivity : Activity(), LocationListener {
                         val row = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(8)); setOnClickListener { selectDestination(place) } }
                         row.addView(TextView(this).apply { text = place.name; textSize = 14f; typeface = Typeface.DEFAULT_BOLD; setTextColor(0xFF102A43.toInt()) })
                         val current = currentLocation
-                        val detail = if (current == null) "بانتظار تحديد موقعك" else {
-                            val d = FloatArray(1)
-                            Location.distanceBetween(current.latitude, current.longitude, place.lat, place.lon, d)
-                            val km = d[0] / 1000.0
-                            val mins = (km / 35.0 * 60.0).toInt().coerceAtLeast(1)
-                            String.format(Locale.US, "%.1f كم • حوالي %d دقيقة", km, mins)
-                        }
+                        val detail = if (current == null) "بانتظار تحديد موقعك" else routeSummary(current, place)
                         row.addView(TextView(this).apply { text = detail; textSize = 12f; setTextColor(0xFF667085.toInt()) })
                         suggestions.addView(row)
                         suggestions.addView(View(this).apply { setBackgroundColor(0xFFE4E7EC.toInt()) }, LinearLayout.LayoutParams(-1, dp(1)))
@@ -256,6 +250,22 @@ class HazardMapActivity : Activity(), LocationListener {
                 }
             }
         }, 500L)
+    }
+
+    private fun routeSummary(from: Location, to: Destination): String {
+        return try {
+            val url = URL("https://router.project-osrm.org/route/v1/driving/" +
+                from.longitude + "," + from.latitude + ";" + to.lon + "," + to.lat + "?overview=false")
+            val connection = (url.openConnection() as HttpURLConnection).apply { connectTimeout = 7000; readTimeout = 7000 }
+            val json = org.json.JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            connection.disconnect()
+            val route = json.optJSONArray("routes")?.optJSONObject(0) ?: return "تعذر حساب مسار القيادة"
+            val km = route.optDouble("distance") / 1000.0
+            val mins = (route.optDouble("duration") / 60.0).toInt().coerceAtLeast(1)
+            String.format(Locale.US, "%.1f كم • %d دقيقة بالسيارة", km, mins)
+        } catch (_: Exception) {
+            "تعذر حساب المسافة ووقت الطريق الآن"
+        }
     }
 
     private fun geocode(query: String): List<Destination> = try {
