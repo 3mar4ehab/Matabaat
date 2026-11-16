@@ -67,8 +67,8 @@ class AlertService : Service(), LocationListener {
                 isClickable = true
                 contentDescription = getString(R.string.quick_report)
                 setOnClickListener {
-                    val openReport = Intent(this@AlertService, MainActivity::class.java).apply {
-                        action = MainActivity.ACTION_QUICK_REPORT
+                    val openReport = Intent(this@AlertService, HazardMapActivity::class.java).apply {
+                        putExtra(HazardMapActivity.EXTRA_QUICK_REPORT, true)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
                     runCatching { startActivity(openReport) }
