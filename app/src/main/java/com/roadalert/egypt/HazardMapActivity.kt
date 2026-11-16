@@ -90,6 +90,7 @@ class HazardMapActivity : Activity(), LocationListener {
             }
         }
         ensureLocationPermission()
+        if (intent.getBooleanExtra(EXTRA_QUICK_REPORT, false)) handler.postDelayed({ showReportChoices() }, 900L)
     }
 
     private fun buildScreen() {
@@ -105,7 +106,7 @@ class HazardMapActivity : Activity(), LocationListener {
         search = EditText(this).apply {
             hint = "إلى أين تريد الذهاب؟"
             textSize = 16f
-            singleLine = true
+            isSingleLine = true
             background = null
             imeOptions = EditorInfo.IME_ACTION_SEARCH
             addTextChangedListener(object : TextWatcher {
@@ -361,5 +362,6 @@ class HazardMapActivity : Activity(), LocationListener {
         const val EXTRA_PICK_LOCATION = "pick_location"
         const val EXTRA_LAT = "picked_latitude"
         const val EXTRA_LON = "picked_longitude"
+        const val EXTRA_QUICK_REPORT = "quick_report"
     }
 }
